@@ -1,16 +1,7 @@
-const express = require('express');
+const { createApp } = require('./app');
 
-const app = express();
-const PORT = 3000;
-
-app.use(express.json());
-
-app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    message: 'Handled API is running'
-  });
-});
+const app = createApp();
+const PORT = Number(process.env.PORT || 3000);
 
 app.listen(PORT, () => {
   console.log(`Handled API running on http://localhost:${PORT}`);
