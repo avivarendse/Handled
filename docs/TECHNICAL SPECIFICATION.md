@@ -1,8 +1,8 @@
 # Handled — Technical Specification
 
-**Project:** Handled  
-**Document:** Technical Specification  
-**Status:** MVP Technical Baseline  
+**Project:** Handled
+**Document:** Technical Specification
+**Status:** MVP Technical Baseline
 **Purpose:** Technical source of truth for implementation
 
 ---
@@ -35,11 +35,11 @@ The core workflow is:
 
 The MVP consists of:
 
-- A Vue frontend
-- A Node.js/Express backend
-- A MySQL database
-- File/object storage for visit photos
-- Authentication and authorization for business staff
+* A Vue frontend
+* A Node.js/Express backend
+* A MySQL database
+* File/object storage for visit photos
+* Authentication and authorization for business staff
 
 High-level architecture:
 
@@ -60,9 +60,7 @@ Express API
               |
               ↓
           MySQL Database
-
               +
-
        File/Object Storage
        for visit photos
 ```
@@ -73,27 +71,44 @@ The backend is responsible for authentication, authorization, validation, busine
 
 The database is responsible for persistent data storage and structural integrity.
 
+In production, the frontend and API are intended to be served under the same site.
+
+The API is exposed under the `/api` path.
+
+Example:
+
+```text
+https://handled.example/
+https://handled.example/api/auth/login
+https://handled.example/api/jobs
+https://handled.example/api/visits
+```
+
+The frontend and backend remain separate application components internally even though users access them through the same site.
+
 ---
 
 # 3. Technology Stack
 
 ## Frontend
 
-- Vue
-- JavaScript
-- Vue Router
-- Pinia
-- Axios
-- CSS
+* Vue
+* JavaScript
+* Vue Router
+* Pinia
+* Axios
+* CSS
 
 The frontend is mobile-first because technicians are expected to use Handled while working in the field.
 
 ## Backend
 
-- Node.js
-- Express
-- JavaScript
-- mysql2
+* Node.js
+* Express
+* JavaScript
+* mysql2
+* bcryptjs
+* JWT library
 
 The backend exposes a REST API.
 
@@ -101,9 +116,13 @@ No ORM is currently planned for the MVP.
 
 Database access uses `mysql2` directly.
 
+Passwords are hashed using bcrypt before storage.
+
+JWTs are used for authenticated sessions.
+
 ## Database
 
-- MySQL
+* MySQL
 
 ## File Storage
 
@@ -119,14 +138,23 @@ The backend uses the following conceptual structure:
 
 ```text
 Backend/
+
 └── src/
+
     ├── routes/
+
     ├── controllers/
+
     ├── services/
+
     ├── middleware/
+
     ├── repositories/
+
     ├── validators/
+
     ├── utils/
+
     └── server.js
 ```
 
@@ -140,10 +168,10 @@ Routes should not contain business logic.
 
 Handle HTTP concerns:
 
-- receive requests
-- extract request data
-- call services
-- return HTTP responses
+* receive requests
+* extract request data
+* call services
+* return HTTP responses
 
 Controllers should not contain complex business rules.
 
@@ -153,12 +181,13 @@ Contain application and domain logic.
 
 Examples:
 
-- creating jobs
-- scheduling visits
-- starting visits
-- completing visits
-- applying visit completion outcomes
-- creating significant job events
+* creating jobs
+* scheduling visits
+* starting visits
+* completing visits
+* applying visit completion outcomes
+* creating significant job events
+* authenticating users
 
 ### Repositories
 
@@ -168,10 +197,10 @@ Handle database queries and persistence.
 
 Handles cross-cutting concerns such as:
 
-- authentication
-- authorization
-- validation
-- error handling
+* authentication
+* authorization
+* validation
+* error handling
 
 ---
 
@@ -179,20 +208,21 @@ Handles cross-cutting concerns such as:
 
 The core domain concepts are:
 
-- Business
-- User
-- Customer
-- Job
-- Visit
-- Note
-- Photo
-- Material
-- Job Event
-- Job Sign-off
+* Business
+* User
+* Customer
+* Job
+* Visit
+* Note
+* Photo
+* Material
+* Job Event
+* Job Sign-off
 
 The central distinction is:
 
-> **Job = the overall piece of work.**  
+> **Job = the overall piece of work.**
+
 > **Visit = one physical attendance/appointment for that job.**
 
 One job can have multiple visits.
@@ -201,12 +231,15 @@ Example:
 
 ```text
 Job #1042
+
 Customer: ABC Property Management
+
 Problem: Burst pipe
 
 Visit 1
 Monday 09:00
 Technician: Thabo
+
 - Diagnose problem
 - Temporary repair
 - Parts required
@@ -214,6 +247,7 @@ Technician: Thabo
 Visit 2
 Wednesday 14:00
 Technician: Thabo
+
 - Install replacement
 - Test system
 - Complete job
@@ -225,8 +259,8 @@ Technician: Thabo
 
 Handled has two authenticated staff roles in the MVP:
 
-- MANAGER
-- TECHNICIAN
+* MANAGER
+* TECHNICIAN
 
 Managers primarily handle planning and administration.
 
@@ -242,10 +276,10 @@ Customers are business records only.
 
 They do not have:
 
-- Handled accounts
-- passwords
-- customer dashboards
-- customer navigation
+* Handled accounts
+* passwords
+* customer dashboards
+* customer navigation
 
 Customer confirmation occurs on the technician's device.
 
@@ -257,22 +291,24 @@ Handled is a multi-business application.
 
 Each business owns its:
 
-- users
-- customers
-- jobs
-- operational records
+* users
+* customers
+* jobs
+* operational records
 
 Major business-owned tables contain `business_id` directly:
 
-- users
-- customers
-- jobs
+* users
+* customers
+* jobs
 
 Related records inherit ownership through their relationships.
 
 Backend authorization must enforce tenant isolation.
 
 The frontend is not a security boundary.
+
+A database foreign key alone does not guarantee that related records belong to the same business. The backend must validate business ownership and cross-business consistency.
 
 ---
 
@@ -282,14 +318,23 @@ The MVP contains exactly ten core tables:
 
 ```text
 businesses
+
 users
+
 customers
+
 jobs
+
 job_visits
+
 visit_notes
+
 visit_photos
+
 visit_materials
+
 job_events
+
 job_signoffs
 ```
 
@@ -343,8 +388,8 @@ BOOLEAN
 
 Use:
 
-- `VARCHAR(n)` for bounded strings
-- `TEXT` for potentially longer free-form text
+* `VARCHAR(n)` for bounded strings
+* `TEXT` for potentially longer free-form text
 
 ### Money
 
@@ -368,22 +413,34 @@ Do not add additional application states without updating this specification.
 
 Represents a business using Handled.
 
-| Column | SQL Type | Null | Default | Constraints |
-|---|---|---|---|---|
-| id | INT UNSIGNED | NO | AUTO_INCREMENT | PRIMARY KEY |
-| name | VARCHAR(150) | NO | — | |
-| phone | VARCHAR(30) | YES | NULL | |
-| email | VARCHAR(255) | YES | NULL | |
-| address | VARCHAR(255) | YES | NULL | |
-| created_at | DATETIME | NO | — | |
-| updated_at | DATETIME | NO | — | |
-| business_code | VARCHAR(20) | NOT NULL | UNIQUE |
+| Column        | SQL Type     | Null | Default        | Constraints |
+| ------------- | ------------ | ---- | -------------- | ----------- |
+| id            | INT UNSIGNED | NO   | AUTO_INCREMENT | PRIMARY KEY |
+| name          | VARCHAR(150) | NO   | —              |             |
+| phone         | VARCHAR(30)  | YES  | NULL           |             |
+| email         | VARCHAR(255) | YES  | NULL           |             |
+| address       | VARCHAR(255) | YES  | NULL           |             |
+| business_code | VARCHAR(20)  | NO   | —              | UNIQUE      |
+| created_at    | DATETIME     | NO   | —              |             |
+| updated_at    | DATETIME     | NO   | —              |             |
 
-No unique constraint is required for `phone` or `email` in the MVP.
+Constraints:
+
+```sql
+PRIMARY KEY (id)
+
+UNIQUE (business_code)
+```
 
 Indexes:
 
-- PRIMARY KEY (`id`)
+```text
+PRIMARY KEY (id)
+
+UNIQUE (business_code)
+```
+
+No unique constraint is required for `phone` or `email` in the MVP.
 
 ---
 
@@ -392,23 +449,31 @@ Indexes:
 Each business has two identifiers:
 
 1. `businesses.id`
-   - Internal database identifier.
-   - Used for foreign-key relationships.
-   - Never used as the normal user-facing login identifier.
+
+   * Internal database identifier.
+   * Used for foreign-key relationships.
+   * Never used as the normal user-facing login identifier.
 
 2. `businesses.business_code`
-   - Human-facing business identifier.
-   - Used during authentication to identify the user's business.
-   - Globally unique.
-   - Uppercase alphanumeric only.
-   - Maximum length: 20 characters.
+
+   * Human-facing business identifier.
+   * Used during authentication to identify the user's business.
+   * Globally unique.
+   * Uppercase alphanumeric only.
+   * Maximum length: 20 characters.
 
 Example:
 
+```text
 Business ID: 42
 Business code: CTP001
+```
 
 The database ID and business code serve different purposes and must not be treated as interchangeable.
+
+Business codes are assigned when a business is created.
+
+Users do not choose or modify the business code during normal account management.
 
 ---
 
@@ -416,23 +481,25 @@ The database ID and business code serve different purposes and must not be treat
 
 Represents authenticated Handled staff.
 
-| Column | SQL Type | Null | Default | Constraints |
-|---|---|---|---|---|
-| id | INT UNSIGNED | NO | AUTO_INCREMENT | PRIMARY KEY |
-| business_id | INT UNSIGNED | NO | — | FK → businesses.id |
-| name | VARCHAR(150) | NO | — | |
-| email | VARCHAR(255) | NO | — | |
-| password_hash | VARCHAR(255) | NO | — | |
-| role | ENUM('MANAGER','TECHNICIAN') | NO | — | |
-| is_active | BOOLEAN | NO | TRUE | |
-| created_at | DATETIME | NO | — | |
-| updated_at | DATETIME | NO | — | |
+| Column        | SQL Type                     | Null | Default        | Constraints        |
+| ------------- | ---------------------------- | ---- | -------------- | ------------------ |
+| id            | INT UNSIGNED                 | NO   | AUTO_INCREMENT | PRIMARY KEY        |
+| business_id   | INT UNSIGNED                 | NO   | —              | FK → businesses.id |
+| name          | VARCHAR(150)                 | NO   | —              |                    |
+| email         | VARCHAR(255)                 | NO   | —              |                    |
+| password_hash | VARCHAR(255)                 | NO   | —              |                    |
+| role          | ENUM('MANAGER','TECHNICIAN') | NO   | —              |                    |
+| is_active     | BOOLEAN                      | NO   | TRUE           |                    |
+| created_at    | DATETIME                     | NO   | —              |                    |
+| updated_at    | DATETIME                     | NO   | —              |                    |
 
 Constraints:
 
 ```sql
 PRIMARY KEY (id)
+
 UNIQUE (business_id, email)
+
 FOREIGN KEY (business_id) REFERENCES businesses(id)
 ```
 
@@ -440,10 +507,13 @@ Indexes:
 
 ```text
 INDEX (business_id)
+
 UNIQUE (business_id, email)
 ```
 
 Users should normally be deactivated rather than deleted.
+
+Email uniqueness is scoped to the business rather than globally.
 
 ---
 
@@ -451,22 +521,23 @@ Users should normally be deactivated rather than deleted.
 
 Represents customers belonging to a business.
 
-| Column | SQL Type | Null | Default | Constraints |
-|---|---|---|---|---|
-| id | INT UNSIGNED | NO | AUTO_INCREMENT | PRIMARY KEY |
-| business_id | INT UNSIGNED | NO | — | FK → businesses.id |
-| name | VARCHAR(150) | NO | — | |
-| phone | VARCHAR(30) | YES | NULL | |
-| email | VARCHAR(255) | YES | NULL | |
-| address | VARCHAR(255) | YES | NULL | |
-| customer_type | ENUM('INDIVIDUAL','BUSINESS') | NO | — | |
-| created_at | DATETIME | NO | — | |
-| updated_at | DATETIME | NO | — | |
+| Column        | SQL Type                      | Null | Default        | Constraints        |
+| ------------- | ----------------------------- | ---- | -------------- | ------------------ |
+| id            | INT UNSIGNED                  | NO   | AUTO_INCREMENT | PRIMARY KEY        |
+| business_id   | INT UNSIGNED                  | NO   | —              | FK → businesses.id |
+| name          | VARCHAR(150)                  | NO   | —              |                    |
+| phone         | VARCHAR(30)                   | YES  | NULL           |                    |
+| email         | VARCHAR(255)                  | YES  | NULL           |                    |
+| address       | VARCHAR(255)                  | YES  | NULL           |                    |
+| customer_type | ENUM('INDIVIDUAL','BUSINESS') | NO   | —              |                    |
+| created_at    | DATETIME                      | NO   | —              |                    |
+| updated_at    | DATETIME                      | NO   | —              |                    |
 
 Constraints:
 
 ```sql
 PRIMARY KEY (id)
+
 FOREIGN KEY (business_id) REFERENCES businesses(id)
 ```
 
@@ -484,29 +555,32 @@ There is no unique constraint on customer phone or email in the MVP.
 
 Represents the overall piece of work.
 
-| Column | SQL Type | Null | Default | Constraints |
-|---|---|---|---|---|
-| id | INT UNSIGNED | NO | AUTO_INCREMENT | PRIMARY KEY |
-| business_id | INT UNSIGNED | NO | — | FK → businesses.id |
-| customer_id | INT UNSIGNED | NO | — | FK → customers.id |
-| created_by | INT UNSIGNED | NO | — | FK → users.id |
-| title | VARCHAR(200) | NO | — | |
-| description | TEXT | YES | NULL | |
-| service_type | VARCHAR(100) | YES | NULL | |
-| status | ENUM('NEW','SCHEDULED','IN_PROGRESS','FOLLOW_UP_REQUIRED','COMPLETED','CUSTOMER_CONFIRMED','CLOSED') | NO | — | |
-| service_address | VARCHAR(255) | NO | — | |
-| invoice_number | VARCHAR(100) | YES | NULL | |
-| invoice_amount | DECIMAL(10,2) | YES | NULL | |
-| invoice_status | ENUM('NOT_INVOICED','INVOICED','PAID') | NO | 'NOT_INVOICED' | |
-| created_at | DATETIME | NO | — | |
-| updated_at | DATETIME | NO | — | |
+| Column          | SQL Type                                                                                             | Null | Default        | Constraints        |
+| --------------- | ---------------------------------------------------------------------------------------------------- | ---- | -------------- | ------------------ |
+| id              | INT UNSIGNED                                                                                         | NO   | AUTO_INCREMENT | PRIMARY KEY        |
+| business_id     | INT UNSIGNED                                                                                         | NO   | —              | FK → businesses.id |
+| customer_id     | INT UNSIGNED                                                                                         | NO   | —              | FK → customers.id  |
+| created_by      | INT UNSIGNED                                                                                         | NO   | —              | FK → users.id      |
+| title           | VARCHAR(200)                                                                                         | NO   | —              |                    |
+| description     | TEXT                                                                                                 | YES  | NULL           |                    |
+| service_type    | VARCHAR(100)                                                                                         | YES  | NULL           |                    |
+| status          | ENUM('NEW','SCHEDULED','IN_PROGRESS','FOLLOW_UP_REQUIRED','COMPLETED','CUSTOMER_CONFIRMED','CLOSED') | NO   | —              |                    |
+| service_address | VARCHAR(255)                                                                                         | NO   | —              |                    |
+| invoice_number  | VARCHAR(100)                                                                                         | YES  | NULL           |                    |
+| invoice_amount  | DECIMAL(10,2)                                                                                        | YES  | NULL           |                    |
+| invoice_status  | ENUM('NOT_INVOICED','INVOICED','PAID')                                                               | NO   | 'NOT_INVOICED' |                    |
+| created_at      | DATETIME                                                                                             | NO   | —              |                    |
+| updated_at      | DATETIME                                                                                             | NO   | —              |                    |
 
 Constraints:
 
 ```sql
 PRIMARY KEY (id)
+
 FOREIGN KEY (business_id) REFERENCES businesses(id)
+
 FOREIGN KEY (customer_id) REFERENCES customers(id)
+
 FOREIGN KEY (created_by) REFERENCES users(id)
 ```
 
@@ -514,20 +588,23 @@ Indexes:
 
 ```text
 INDEX (business_id)
+
 INDEX (customer_id)
+
 INDEX (status)
+
 INDEX (created_at)
 ```
 
 The following fields deliberately do NOT exist on `jobs`:
 
-- assigned_technician_id
-- scheduled_start
-- scheduled_end
-- completion_summary
-- completed_at
-- closed_at
-- priority
+* assigned_technician_id
+* scheduled_start
+* scheduled_end
+* completion_summary
+* completed_at
+* closed_at
+* priority
 
 Those concepts belong elsewhere or are outside the MVP.
 
@@ -537,24 +614,26 @@ Those concepts belong elsewhere or are outside the MVP.
 
 Represents an individual physical attendance/appointment for a job.
 
-| Column | SQL Type | Null | Default | Constraints |
-|---|---|---|---|---|
-| id | INT UNSIGNED | NO | AUTO_INCREMENT | PRIMARY KEY |
-| job_id | INT UNSIGNED | NO | — | FK → jobs.id |
-| technician_id | INT UNSIGNED | NO | — | FK → users.id |
-| status | ENUM('SCHEDULED','IN_PROGRESS','COMPLETED','CANCELLED') | NO | — | |
-| scheduled_start | DATETIME | NO | — | |
-| scheduled_end | DATETIME | NO | — | |
-| completion_summary | TEXT | YES | NULL | |
-| completed_at | DATETIME | YES | NULL | |
-| created_at | DATETIME | NO | — | |
-| updated_at | DATETIME | NO | — | |
+| Column             | SQL Type                                                | Null | Default        | Constraints   |
+| ------------------ | ------------------------------------------------------- | ---- | -------------- | ------------- |
+| id                 | INT UNSIGNED                                            | NO   | AUTO_INCREMENT | PRIMARY KEY   |
+| job_id             | INT UNSIGNED                                            | NO   | —              | FK → jobs.id  |
+| technician_id      | INT UNSIGNED                                            | NO   | —              | FK → users.id |
+| status             | ENUM('SCHEDULED','IN_PROGRESS','COMPLETED','CANCELLED') | NO   | —              |               |
+| scheduled_start    | DATETIME                                                | NO   | —              |               |
+| scheduled_end      | DATETIME                                                | NO   | —              |               |
+| completion_summary | TEXT                                                    | YES  | NULL           |               |
+| completed_at       | DATETIME                                                | YES  | NULL           |               |
+| created_at         | DATETIME                                                | NO   | —              |               |
+| updated_at         | DATETIME                                                | NO   | —              |               |
 
 Constraints:
 
 ```sql
 PRIMARY KEY (id)
+
 FOREIGN KEY (job_id) REFERENCES jobs(id)
+
 FOREIGN KEY (technician_id) REFERENCES users(id)
 ```
 
@@ -562,8 +641,11 @@ Indexes:
 
 ```text
 INDEX (job_id)
+
 INDEX (technician_id)
+
 INDEX (status)
+
 INDEX (scheduled_start)
 ```
 
@@ -577,19 +659,21 @@ That requirement is a business rule, not a simple column-level database requirem
 
 Stores notes associated with a visit.
 
-| Column | SQL Type | Null | Default | Constraints |
-|---|---|---|---|---|
-| id | INT UNSIGNED | NO | AUTO_INCREMENT | PRIMARY KEY |
-| visit_id | INT UNSIGNED | NO | — | FK → job_visits.id |
-| created_by | INT UNSIGNED | NO | — | FK → users.id |
-| note | TEXT | NO | — | |
-| created_at | DATETIME | NO | — | |
+| Column     | SQL Type     | Null | Default        | Constraints        |
+| ---------- | ------------ | ---- | -------------- | ------------------ |
+| id         | INT UNSIGNED | NO   | AUTO_INCREMENT | PRIMARY KEY        |
+| visit_id   | INT UNSIGNED | NO   | —              | FK → job_visits.id |
+| created_by | INT UNSIGNED | NO   | —              | FK → users.id      |
+| note       | TEXT         | NO   | —              |                    |
+| created_at | DATETIME     | NO   | —              |                    |
 
 Constraints:
 
 ```sql
 PRIMARY KEY (id)
+
 FOREIGN KEY (visit_id) REFERENCES job_visits(id)
+
 FOREIGN KEY (created_by) REFERENCES users(id)
 ```
 
@@ -607,20 +691,22 @@ No `updated_at` field is required because notes are treated as historical record
 
 Stores references to photos associated with a visit.
 
-| Column | SQL Type | Null | Default | Constraints |
-|---|---|---|---|---|
-| id | INT UNSIGNED | NO | AUTO_INCREMENT | PRIMARY KEY |
-| visit_id | INT UNSIGNED | NO | — | FK → job_visits.id |
-| uploaded_by | INT UNSIGNED | NO | — | FK → users.id |
-| file_url | VARCHAR(500) | NO | — | |
-| caption | VARCHAR(255) | YES | NULL | |
-| created_at | DATETIME | NO | — | |
+| Column      | SQL Type     | Null | Default        | Constraints        |
+| ----------- | ------------ | ---- | -------------- | ------------------ |
+| id          | INT UNSIGNED | NO   | AUTO_INCREMENT | PRIMARY KEY        |
+| visit_id    | INT UNSIGNED | NO   | —              | FK → job_visits.id |
+| uploaded_by | INT UNSIGNED | NO   | —              | FK → users.id      |
+| file_url    | VARCHAR(500) | NO   | —              |                    |
+| caption     | VARCHAR(255) | YES  | NULL           |                    |
+| created_at  | DATETIME     | NO   | —              |                    |
 
 Constraints:
 
 ```sql
 PRIMARY KEY (id)
+
 FOREIGN KEY (visit_id) REFERENCES job_visits(id)
+
 FOREIGN KEY (uploaded_by) REFERENCES users(id)
 ```
 
@@ -638,21 +724,23 @@ The actual image is stored outside MySQL.
 
 Records materials used during a visit.
 
-| Column | SQL Type | Null | Default | Constraints |
-|---|---|---|---|---|
-| id | INT UNSIGNED | NO | AUTO_INCREMENT | PRIMARY KEY |
-| visit_id | INT UNSIGNED | NO | — | FK → job_visits.id |
-| name | VARCHAR(150) | NO | — | |
-| quantity | DECIMAL(10,2) | NO | — | |
-| unit | VARCHAR(30) | NO | — | |
-| created_by | INT UNSIGNED | NO | — | FK → users.id |
-| created_at | DATETIME | NO | — | |
+| Column     | SQL Type      | Null | Default        | Constraints        |
+| ---------- | ------------- | ---- | -------------- | ------------------ |
+| id         | INT UNSIGNED  | NO   | AUTO_INCREMENT | PRIMARY KEY        |
+| visit_id   | INT UNSIGNED  | NO   | —              | FK → job_visits.id |
+| name       | VARCHAR(150)  | NO   | —              |                    |
+| quantity   | DECIMAL(10,2) | NO   | —              |                    |
+| unit       | VARCHAR(30)   | NO   | —              |                    |
+| created_by | INT UNSIGNED  | NO   | —              | FK → users.id      |
+| created_at | DATETIME      | NO   | —              |                    |
 
 Constraints:
 
 ```sql
 PRIMARY KEY (id)
+
 FOREIGN KEY (visit_id) REFERENCES job_visits(id)
+
 FOREIGN KEY (created_by) REFERENCES users(id)
 ```
 
@@ -672,22 +760,25 @@ It does not represent inventory.
 
 Stores significant job lifecycle events.
 
-| Column | SQL Type | Null | Default | Constraints |
-|---|---|---|---|---|
-| id | INT UNSIGNED | NO | AUTO_INCREMENT | PRIMARY KEY |
-| job_id | INT UNSIGNED | NO | — | FK → jobs.id |
-| visit_id | INT UNSIGNED | YES | NULL | FK → job_visits.id |
-| user_id | INT UNSIGNED | YES | NULL | FK → users.id |
-| event_type | ENUM('JOB_CREATED','VISIT_CREATED','TECHNICIAN_ASSIGNED','VISIT_STARTED','VISIT_COMPLETED','FOLLOW_UP_REQUIRED','CUSTOMER_CONFIRMED','JOB_CLOSED') | NO | — | |
-| description | VARCHAR(500) | YES | NULL | |
-| created_at | DATETIME | NO | — | |
+| Column      | SQL Type                                                                                                                                           | Null | Default        | Constraints        |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | -------------- | ------------------ |
+| id          | INT UNSIGNED                                                                                                                                       | NO   | AUTO_INCREMENT | PRIMARY KEY        |
+| job_id      | INT UNSIGNED                                                                                                                                       | NO   | —              | FK → jobs.id       |
+| visit_id    | INT UNSIGNED                                                                                                                                       | YES  | NULL           | FK → job_visits.id |
+| user_id     | INT UNSIGNED                                                                                                                                       | YES  | NULL           | FK → users.id      |
+| event_type  | ENUM('JOB_CREATED','VISIT_CREATED','TECHNICIAN_ASSIGNED','VISIT_STARTED','VISIT_COMPLETED','FOLLOW_UP_REQUIRED','CUSTOMER_CONFIRMED','JOB_CLOSED') | NO   | —              |                    |
+| description | VARCHAR(500)                                                                                                                                       | YES  | NULL           |                    |
+| created_at  | DATETIME                                                                                                                                           | NO   | —              |                    |
 
 Constraints:
 
 ```sql
 PRIMARY KEY (id)
+
 FOREIGN KEY (job_id) REFERENCES jobs(id)
+
 FOREIGN KEY (visit_id) REFERENCES job_visits(id)
+
 FOREIGN KEY (user_id) REFERENCES users(id)
 ```
 
@@ -695,7 +786,9 @@ Indexes:
 
 ```text
 INDEX (job_id)
+
 INDEX (visit_id)
+
 INDEX (created_at)
 ```
 
@@ -713,20 +806,22 @@ It should contain significant lifecycle events only.
 
 Stores the customer's final confirmation.
 
-| Column | SQL Type | Null | Default | Constraints |
-|---|---|---|---|---|
-| id | INT UNSIGNED | NO | AUTO_INCREMENT | PRIMARY KEY |
-| job_id | INT UNSIGNED | NO | — | FK → jobs.id |
-| customer_name | VARCHAR(150) | NO | — | |
-| confirmed_at | DATETIME | NO | — | |
-| confirmation_type | ENUM('TYPED_CONFIRMATION') | NO | — | |
-| confirmation_data | TEXT | YES | NULL | |
+| Column            | SQL Type                   | Null | Default        | Constraints  |
+| ----------------- | -------------------------- | ---- | -------------- | ------------ |
+| id                | INT UNSIGNED               | NO   | AUTO_INCREMENT | PRIMARY KEY  |
+| job_id            | INT UNSIGNED               | NO   | —              | FK → jobs.id |
+| customer_name     | VARCHAR(150)               | NO   | —              |              |
+| confirmed_at      | DATETIME                   | NO   | —              |              |
+| confirmation_type | ENUM('TYPED_CONFIRMATION') | NO   | —              |              |
+| confirmation_data | TEXT                       | YES  | NULL           |              |
 
 Constraints:
 
 ```sql
 PRIMARY KEY (id)
+
 UNIQUE (job_id)
+
 FOREIGN KEY (job_id) REFERENCES jobs(id)
 ```
 
@@ -799,10 +894,10 @@ Historical operational records must not be accidentally destroyed through cascad
 
 Therefore:
 
-- Do not use `ON DELETE CASCADE` on operational relationships where deleting a parent would remove historical records.
-- Users should be deactivated rather than deleted.
-- Businesses, jobs, visits, notes, photos, materials, events, and sign-offs should not be casually deleted.
-- Where deletion behavior is not explicitly required by the MVP, prefer restrictive foreign-key behavior.
+* Do not use `ON DELETE CASCADE` on operational relationships where deleting a parent would remove historical records.
+* Users should be deactivated rather than deleted.
+* Businesses, jobs, visits, notes, photos, materials, events, and sign-offs should not be casually deleted.
+* Where deletion behavior is not explicitly required by the MVP, prefer restrictive foreign-key behavior.
 
 The exact SQL implementation should use restrictive/default foreign-key behavior unless a specific relationship requires another behavior.
 
@@ -816,6 +911,7 @@ For example:
 
 ```text
 jobs.business_id
+
 customers.business_id
 ```
 
@@ -827,6 +923,7 @@ Example:
 
 ```text
 Job.business_id = Business A
+
 Customer.business_id = Business A
 ```
 
@@ -834,6 +931,7 @@ is valid.
 
 ```text
 Job.business_id = Business A
+
 Customer.business_id = Business B
 ```
 
@@ -847,11 +945,11 @@ This is an application-level integrity rule.
 
 ```text
 NEW
- ↓
+  ↓
 SCHEDULED
- ↓
+  ↓
 IN_PROGRESS
- ↓
+  ↓
  ┌───────────────────────────┐
  │                           │
  ▼                           ▼
@@ -866,9 +964,9 @@ FOLLOW_UP_REQUIRED        COMPLETED
  │ Manager schedules another visit
  ▼
 SCHEDULED
- ↓
+  ↓
 IN_PROGRESS
- ↓
+  ↓
 ...
 ```
 
@@ -878,9 +976,9 @@ IN_PROGRESS
 
 ```text
 SCHEDULED
- ↓
+  ↓
 IN_PROGRESS
- ↓
+  ↓
 COMPLETED
 ```
 
@@ -888,7 +986,7 @@ or:
 
 ```text
 SCHEDULED
- ↓
+  ↓
 CANCELLED
 ```
 
@@ -902,10 +1000,14 @@ The frontend should expose meaningful actions instead of arbitrary status editin
 
 Examples:
 
-- Start Visit
-- Complete Visit
+* Start Visit
+* Complete Visit
 
 The backend validates whether each action is permitted.
+
+UI actions express user intent.
+
+Backend services enforce the resulting state transitions and business rules.
 
 ---
 
@@ -913,8 +1015,8 @@ The backend validates whether each action is permitted.
 
 When completing a visit, the technician provides:
 
-- completion summary
-- completion outcome
+* completion summary
+* completion outcome
 
 The outcome is:
 
@@ -932,6 +1034,7 @@ FOLLOW_UP_REQUIRED
 
 ```text
 Visit → COMPLETED
+
 Job → COMPLETED
 ```
 
@@ -939,6 +1042,7 @@ Job → COMPLETED
 
 ```text
 Visit → COMPLETED
+
 Job → FOLLOW_UP_REQUIRED
 ```
 
@@ -961,6 +1065,10 @@ CLOSED
 ```
 
 Customer confirmation occurs on the technician's device in the MVP.
+
+Customer confirmation applies to the overall job rather than an individual visit.
+
+The MVP uses one final sign-off per job.
 
 ---
 
@@ -1004,6 +1112,7 @@ If follow-up is required:
 
 ```text
 Visit → COMPLETED
+
 Job → FOLLOW_UP_REQUIRED
 ```
 
@@ -1019,6 +1128,7 @@ If the technician indicates that the overall job is complete:
 
 ```text
 Visit → COMPLETED
+
 Job → COMPLETED
 ```
 
@@ -1052,16 +1162,18 @@ The MVP does not include job priority scoring or priority levels.
 
 # 30. Authentication and Authorization
 
-Authentication will use:
+Authentication uses:
 
-- email
-- password
-- secure password hashing
-- JWT-based authentication
+* business code
+* email
+* password
+* secure password hashing
+* JWT-based authentication
+* HttpOnly cookie-based token transport
 
 Passwords must never be stored in plaintext.
 
-Authorization will be business-aware and role-aware.
+Authorization is business-aware and role-aware.
 
 The backend is the final security boundary.
 
@@ -1069,23 +1181,40 @@ Handled authenticates MANAGER and TECHNICIAN users.
 
 Customers do not authenticate in the MVP.
 
-User login requires:
+## Login
 
-- Business code
-- Email address
-- Password
+The primary authentication endpoint is:
 
-Authentication flow:
+```http
+POST /api/auth/login
+```
+
+The request contains:
+
+```json
+{
+  "businessCode": "NORTHSTAR01",
+  "email": "manager@northstarhvac.test",
+  "password": "..."
+}
+```
+
+The login flow is:
 
 1. Receive business code, email, and password.
-2. Validate the business code format.
-3. Find the business using `business_code`.
-4. Find the user using `business_id` and email.
-5. Confirm that the user is active.
-6. Verify the supplied password against `password_hash`.
-7. Issue an authenticated session/token containing the user's identity, business, and role.
+2. Validate the request structure and business code format.
+3. Normalize the business code to uppercase where appropriate.
+4. Find the business using `business_code`.
+5. Find the user using `business_id` and email.
+6. Confirm that the user is active.
+7. Verify the supplied password against `password_hash`.
+8. Create an authenticated JWT containing the required identity claims.
+9. Set the JWT in an HttpOnly authentication cookie.
+10. Return safe authenticated user information without exposing the token or password hash.
 
 A failed business lookup, user lookup, inactive user check, or password verification must not reveal which specific authentication condition failed.
+
+Authentication failures should use a generic authentication error rather than confirming whether a particular business, email, or password was correct.
 
 ---
 
@@ -1095,22 +1224,110 @@ The authentication token must contain only the information required to identify 
 
 Required claims:
 
-- `sub` — authenticated user ID
-- `businessId` — authenticated user's business ID
-- `role` — authenticated user's role
+* `sub` — authenticated user ID
+* `businessId` — authenticated user's business ID
+* `role` — authenticated user's role
 
 The token must not contain:
 
-- password or password hash
-- customer data
-- job data
-- visit data
-- notes
-- photos
-- billing information
-- other unnecessary application data
+* password or password hash
+* customer data
+* job data
+* visit data
+* notes
+* photos
+* billing information
+* other unnecessary application data
 
 The backend must treat the token as the source of authenticated identity, but must still enforce resource ownership and business rules on every protected operation.
+
+---
+
+## JWT Transport
+
+The MVP uses an HttpOnly cookie to transport the authentication JWT.
+
+The JWT should not be exposed to frontend JavaScript.
+
+The browser stores the token in an HttpOnly cookie and automatically sends the cookie with applicable requests to the Handled API.
+
+The authentication cookie should use:
+
+```text
+HttpOnly
+Secure in production
+SameSite configured appropriately for the deployment
+```
+
+The exact production cookie configuration must match the final deployment topology.
+
+The frontend should not store the authentication JWT in `localStorage` or another JavaScript-accessible persistent store.
+
+The frontend instead obtains authenticated user information through authenticated API requests.
+
+---
+
+## Same-Site Deployment
+
+The frontend and backend are intended to be deployed under the same site for the MVP.
+
+The public application should follow this general structure:
+
+```text
+https://handled.example/
+    ↓
+Vue frontend
+
+https://handled.example/api/*
+    ↓
+Express API
+```
+
+The frontend and backend may remain separate deployment processes or services internally.
+
+The public browser-facing architecture should present them as one application.
+
+This approach simplifies browser authentication and avoids unnecessary cross-origin authentication complexity.
+
+The implementation must still configure cookie security, request validation, CORS where applicable, and CSRF protections appropriately for the final deployment environment.
+
+---
+
+## Authentication Lifecycle
+
+The intended authentication lifecycle is:
+
+```text
+POST /api/auth/login
+        ↓
+Credentials verified
+        ↓
+JWT created
+        ↓
+HttpOnly cookie set
+        ↓
+Authenticated requests
+        ↓
+Authentication middleware verifies JWT
+        ↓
+Authenticated identity attached to request
+```
+
+The MVP should also provide a way for the frontend to determine the current authenticated user, such as:
+
+```http
+GET /api/auth/me
+```
+
+The current user endpoint should return safe user identity information only.
+
+Logout should invalidate the browser session by clearing the authentication cookie:
+
+```http
+POST /api/auth/logout
+```
+
+The logout implementation must not require the frontend to know or manipulate the JWT directly.
 
 ---
 
@@ -1118,21 +1335,23 @@ The backend must treat the token as the source of authenticated identity, but mu
 
 Authentication answers:
 
-"Who is this user?"
+> "Who is this user?"
 
 Authorization answers:
 
-"What is this authenticated user allowed to do?"
+> "What is this authenticated user allowed to do?"
 
 Tenant isolation answers:
 
-"Does the requested resource belong to this user's business?"
+> "Does the requested resource belong to this user's business?"
 
 All three are required for protected operations.
 
 A valid JWT alone does not grant access to arbitrary resources.
 
-Role checks alone are also insufficient. A user must be authorized by both role and business/resource ownership where applicable.
+Role checks alone are also insufficient.
+
+A user must be authorized by both role and business/resource ownership where applicable.
 
 ---
 
@@ -1140,12 +1359,12 @@ Role checks alone are also insufficient. A user must be authorized by both role 
 
 Business codes must:
 
-- be 1–20 characters
-- contain only `A-Z` and `0-9`
-- be stored in uppercase
-- be globally unique
-- not contain whitespace
-- not contain punctuation or special characters
+* be 1–20 characters
+* contain only `A-Z` and `0-9`
+* be stored in uppercase
+* be globally unique
+* not contain whitespace
+* not contain punctuation or special characters
 
 The API must validate business codes before attempting authentication.
 
@@ -1167,9 +1386,9 @@ Users are deactivated using `is_active = FALSE` rather than being deleted when h
 
 Inactive users:
 
-- cannot authenticate
-- cannot receive new assignments
-- cannot perform authenticated operational actions
+* cannot authenticate
+* cannot receive new assignments
+* cannot perform authenticated operational actions
 
 Existing historical records associated with an inactive user remain intact.
 
@@ -1186,6 +1405,8 @@ Before a technician starts or completes a visit, the backend should verify:
 5. The visit is assigned to that technician.
 6. The visit is currently in a valid state for the requested action.
 
+Authorization should be enforced by the backend rather than relying on frontend controls.
+
 ---
 
 # 32. Validation Strategy
@@ -1198,11 +1419,19 @@ Immediate user feedback.
 
 ### Request/API validation
 
-Checks request structure and data types.
+Checks request structure, required fields, data types, and basic input constraints.
 
 ### Business-rule validation
 
 Services verify whether an operation is allowed.
+
+### Authorization validation
+
+Authentication and authorization middleware verify user identity, role, and access requirements.
+
+### Tenant validation
+
+Services and repositories verify that resources belong to the authenticated user's business.
 
 ### Database constraints
 
@@ -1228,6 +1457,8 @@ Create job event
 
 These operations should succeed or fail together.
 
+Authentication itself does not require a database transaction for JWT creation, but account-related database operations that modify multiple records should use transactions where consistency matters.
+
 ---
 
 # 34. Database Indexing Strategy
@@ -1240,13 +1471,17 @@ The MVP requires the following indexes:
 
 ```text
 PRIMARY KEY (id)
+
+UNIQUE (business_code)
 ```
 
 ### users
 
 ```text
 PRIMARY KEY (id)
+
 INDEX (business_id)
+
 UNIQUE (business_id, email)
 ```
 
@@ -1254,6 +1489,7 @@ UNIQUE (business_id, email)
 
 ```text
 PRIMARY KEY (id)
+
 INDEX (business_id)
 ```
 
@@ -1261,9 +1497,13 @@ INDEX (business_id)
 
 ```text
 PRIMARY KEY (id)
+
 INDEX (business_id)
+
 INDEX (customer_id)
+
 INDEX (status)
+
 INDEX (created_at)
 ```
 
@@ -1271,9 +1511,13 @@ INDEX (created_at)
 
 ```text
 PRIMARY KEY (id)
+
 INDEX (job_id)
+
 INDEX (technician_id)
+
 INDEX (status)
+
 INDEX (scheduled_start)
 ```
 
@@ -1281,6 +1525,7 @@ INDEX (scheduled_start)
 
 ```text
 PRIMARY KEY (id)
+
 INDEX (visit_id)
 ```
 
@@ -1288,6 +1533,7 @@ INDEX (visit_id)
 
 ```text
 PRIMARY KEY (id)
+
 INDEX (visit_id)
 ```
 
@@ -1295,6 +1541,7 @@ INDEX (visit_id)
 
 ```text
 PRIMARY KEY (id)
+
 INDEX (visit_id)
 ```
 
@@ -1302,8 +1549,11 @@ INDEX (visit_id)
 
 ```text
 PRIMARY KEY (id)
+
 INDEX (job_id)
+
 INDEX (visit_id)
+
 INDEX (created_at)
 ```
 
@@ -1311,6 +1561,7 @@ INDEX (created_at)
 
 ```text
 PRIMARY KEY (id)
+
 UNIQUE (job_id)
 ```
 
@@ -1320,30 +1571,70 @@ UNIQUE (job_id)
 
 Database schema changes must be versioned and repeatable.
 
-If a migration system is not already present, implement a lightweight migration approach.
+The project currently uses a lightweight migration approach with numbered SQL migration files.
 
-Example:
+Current migrations include:
 
 ```text
-001_create_businesses
-002_create_users
-003_create_customers
-004_create_jobs
-005_create_job_visits
-006_create_visit_notes
-007_create_visit_photos
-008_create_visit_materials
-009_create_job_events
-010_create_job_signoffs
+001_initial_schema.sql
+
+002_add_business_code.sql
+```
+
+The migration runner records applied migrations in:
+
+```text
+schema_migrations
 ```
 
 Future schema changes should be added as new migrations.
 
 Previously applied migrations should not be rewritten unless there is a deliberate database migration strategy for doing so.
 
+For example, adding `businesses.business_code` after the initial schema had already been applied was implemented as migration `002_add_business_code.sql`.
+
 ---
 
-# 36. File Storage
+# 36. Development Seed Data
+
+The backend includes a development-only database seed.
+
+The seed creates a development business and manager account for local authentication testing.
+
+Current development seed data includes:
+
+```text
+Business:
+Northstar Heating & Cooling
+
+Business code:
+NORTHSTAR01
+
+Manager:
+Morgan Lee
+
+Email:
+manager@northstarhvac.test
+```
+
+The manager password is supplied through the `SEED_MANAGER_PASSWORD` environment variable.
+
+The seed must:
+
+* never store the plaintext password
+* hash the password using bcrypt
+* avoid logging the password
+* use parameterized database queries
+* use a transaction
+* be safe to run repeatedly without creating duplicate records
+
+The seed is development setup data and is not the public user-registration system.
+
+Production registration/account provisioning is outside the current MVP implementation boundary.
+
+---
+
+# 37. File Storage
 
 Visit photos are stored outside the relational database.
 
@@ -1365,7 +1656,7 @@ Store file reference in MySQL
 
 ---
 
-# 37. MVP Billing
+# 38. MVP Billing
 
 Billing is intentionally lightweight.
 
@@ -1373,7 +1664,9 @@ Fields:
 
 ```text
 invoice_number
+
 invoice_amount
+
 invoice_status
 ```
 
@@ -1381,7 +1674,9 @@ Invoice status:
 
 ```text
 NOT_INVOICED
+
 INVOICED
+
 PAID
 ```
 
@@ -1389,32 +1684,32 @@ No full accounting or payment processing is implemented.
 
 ---
 
-# 38. MVP Exclusions
+# 39. MVP Exclusions
 
 The following are outside the MVP:
 
-- customer login
-- customer portal
-- dedicated multi-location entity
-- inventory management
-- suppliers
-- purchase orders
-- full accounting
-- tax calculations
-- payment processing
-- line-item invoicing
-- digital signature infrastructure
-- GPS tracking
-- route optimization
-- AI scheduling
-- AI summaries
-- automated WhatsApp workflows
-- advanced reporting
-- priority scoring
+* customer login
+* customer portal
+* dedicated multi-location entity
+* inventory management
+* suppliers
+* purchase orders
+* full accounting
+* tax calculations
+* payment processing
+* line-item invoicing
+* digital signature infrastructure
+* GPS tracking
+* route optimization
+* AI scheduling
+* AI summaries
+* automated WhatsApp workflows
+* advanced reporting
+* priority scoring
 
 ---
 
-# 39. Implementation Principles
+# 40. Implementation Principles
 
 ### Keep domain concepts explicit
 
@@ -1427,6 +1722,16 @@ Users perform meaningful actions rather than directly editing status fields.
 ### Backend owns business rules
 
 Frontend controls are not security boundaries.
+
+### Separate authentication from authorization
+
+Authentication establishes identity.
+
+Authorization determines what the authenticated user may do.
+
+### Enforce tenant isolation server-side
+
+A user's role does not grant access to resources belonging to another business.
 
 ### Keep the database relational
 
@@ -1464,39 +1769,49 @@ Customer confirmation
 Closure
 ```
 
+### Prefer incremental implementation
+
+Each major subsystem should be implemented, tested, and reviewed before unrelated functionality is added.
+
 ---
 
-# 40. Current Implementation Boundary
+# 41. Current Implementation Boundary
 
 Implementation should progress through these layers:
 
 ```text
 1. Database/schema
         ↓
-2. Authentication
+2. Development seed
         ↓
-3. Authorization
+3. Authentication
         ↓
-4. Backend foundation
+4. Authorization
         ↓
-5. Job/visit API
+5. Backend foundation
         ↓
-6. Frontend foundation
+6. Job/visit API
         ↓
-7. Manager workflows
+7. Frontend authentication/foundation
         ↓
-8. Technician workflows
+8. Manager workflows
         ↓
-9. Customer confirmation
+9. Technician workflows
         ↓
-10. Validation/testing/security review
+10. Customer confirmation
+        ↓
+11. Validation/testing/security review
 ```
+
+The database/schema and development seed layers are currently complete.
+
+The next implementation layer is authentication.
 
 Each layer should be implemented and verified before unnecessarily expanding into the next.
 
 ---
 
-# 41. Source of Truth
+# 42. Source of Truth
 
 The documentation hierarchy is:
 
@@ -1504,43 +1819,46 @@ The documentation hierarchy is:
 
 Source of truth for:
 
-- product purpose
-- product concept
-- target users
-- overall problem
+* product purpose
+* product concept
+* target users
+* overall problem
 
 ### Requirements
 
 Source of truth for:
 
-- functional requirements
-- user capabilities
-- MVP scope
+* functional requirements
+* user capabilities
+* MVP scope
 
 ### Development Roadmap
 
 Source of truth for:
 
-- implementation sequence
-- project milestones
+* implementation sequence
+* project milestones
 
 ### Technical Specification
 
 Source of truth for:
 
-- system architecture
-- technical design
-- domain model
-- database schema
-- SQL data types
-- nullability
-- defaults
-- indexes
-- constraints
-- foreign keys
-- technical business rules
-- security principles
-- implementation boundaries
+* system architecture
+* technical design
+* domain model
+* database schema
+* SQL data types
+* nullability
+* defaults
+* indexes
+* constraints
+* foreign keys
+* technical business rules
+* authentication architecture
+* authorization principles
+* tenant isolation
+* security principles
+* implementation boundaries
 
 If implementation reveals a conflict, do not silently reinterpret the architecture.
 
@@ -1548,23 +1866,57 @@ The relevant documentation must be updated deliberately.
 
 ---
 
-# 42. Current Technical Status
+# 43. Current Technical Status
 
-Established:
+Established and verified:
 
-- Handled repository
-- Vue frontend
-- Node.js/Express backend
-- MySQL database choice
-- mysql2 database access
-- initial backend health endpoint
-- core product workflow
-- Job/Visit domain model
-- MVP database model
-- business rules
-- MVP exclusions
-- technical architecture
+* Handled repository
+* Vue frontend
+* Node.js/Express backend
+* MySQL database
+* mysql2 database access
+* initial backend health endpoint
+* core product workflow
+* Job/Visit domain model
+* MVP database model
+* business rules
+* MVP exclusions
+* technical architecture
+* versioned database migrations
+* `schema_migrations` tracking
+* `businesses.business_code`
+* tenant-scoped user email uniqueness
+* development database seed
+* bcrypt password hashing for seeded users
+* idempotent development seed
+* development manager account
+* Git repository dependency exclusion through `.gitignore`
+* clean database foundation
 
-The next implementation task is the **database/schema layer**.
+The database foundation has been implemented and verified.
 
-Authentication and API implementation should begin only after the database foundation has been implemented and reviewed.
+The next implementation task is **authentication**, beginning with the login endpoint.
+
+The intended first authentication slice is:
+
+```text
+POST /api/auth/login
+        ↓
+Validate credentials
+        ↓
+Find business
+        ↓
+Find user
+        ↓
+Verify active status
+        ↓
+Verify password
+        ↓
+Create JWT
+        ↓
+Set HttpOnly cookie
+        ↓
+Return safe user information
+```
+
+Authentication should be implemented and tested before proceeding to authorization middleware and protected business operations.
