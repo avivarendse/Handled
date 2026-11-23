@@ -44,6 +44,10 @@ Objectives:
 • Define navigation  
 • Identify important UI states  
 • Design the technician mobile-first experience
+• Finalise the T05 Customer Confirmation screen, including the completion summary, acknowledgement wording, customer name, signature canvas, clear/redraw action, submission states and failure states.
+• Define customer refusal and unavailability behaviour.
+• Define manager and technician sign-off evidence-review interfaces.
+• Confirm mobile touch usability and accessibility requirements for signature capture.
 
 Key outcome:
 
@@ -81,6 +85,10 @@ Objectives:
 • Define job status representation  
 • Define job history/event structure  
 • Review data integrity requirements
+• Define the customer signature evidence fields and foreign-key relationships.
+• Preserve the existing one-sign-off-per-Job constraint.
+• Plan a new numbered migration for customer signature support without rewriting applied migrations.
+• Define how a sign-off references the Visit responsible for completing the overall Job.
 
 Expected core entities may include:
 
@@ -145,7 +153,18 @@ Development order:
 10. Job history  
 11. Completion  
 12. Customer sign-off  
-13. Basic invoice/payment status
+13. Customer sign-off implementation includes:
+
+• Create and verify the customer-signature database migration.
+• Implement signature image validation and private storage.
+• Implement customer confirmation eligibility and technician authorisation.
+• Preserve completion-summary and acknowledgement snapshots.
+• Record the capturing technician and server timestamp.
+• Implement atomic database updates for sign-off, Job status and history event.
+• Prevent duplicate and concurrent sign-offs.
+• Implement protected signature-evidence retrieval.
+• Handle file-storage and database failure recovery.
+Basic invoice/payment status
 
 Each major feature should be implemented and tested before moving to the next.
 
@@ -168,6 +187,15 @@ Development order:
 13. Job history/timeline  
 14. Completion  
 15. Customer sign-off  
+16. Customer sign-off frontend implementation includes:
+
+• Build the mobile-first T05 signature screen.
+• Display the authoritative completion summary and acknowledgement wording.
+• Capture customer name and on-screen signature.
+• Support clear/redraw.
+• Handle validation, loading, success and failure states.
+• Prevent accidental duplicate submission.
+• Build authorised manager and capturing-technician evidence review.
 16. Customer-facing experience
 
 PHASE 9 — FRONTEND/BACKEND INTEGRATION
@@ -183,6 +211,9 @@ Objectives:
 • Handle empty states  
 • Handle upload failures  
 • Verify complete workflows
+• Integrate customer signature submission and protected evidence retrieval.
+• Verify that the completion summary and acknowledgement displayed to the customer match the server-preserved evidence.
+• Verify that unsuccessful confirmation leaves the Job unconfirmed.
 
 PHASE 10 — VALIDATION AND ERROR HANDLING
 
@@ -196,6 +227,10 @@ Objectives:
 • Handle missing resources  
 • Handle failed uploads  
 • Handle expired/invalid authentication
+• Reject blank, invalid, oversized or unsupported signature images.
+• Reject customer confirmation for ineligible Jobs or unauthorised technicians.
+• Handle duplicate submissions and concurrent confirmation attempts.
+• Handle partial failures involving private file storage and database persistence.
 
 PHASE 11 — TESTING
 
@@ -215,6 +250,17 @@ Areas include:
 • Customer sign-off  
 • API error handling  
 • Important frontend behaviour
+
+• Test valid customer signature capture and evidence retrieval.
+• Test missing customer name, blank signature and invalid image data.
+• Test confirmation before Job completion.
+• Test incorrect technician assignment and cross-business access.
+• Test duplicate and concurrent submissions.
+• Test Job status, history event and sign-off consistency.
+• Test preservation of exact completion-summary and acknowledgement snapshots.
+• Test manager, capturing-technician and unauthorised-technician review permissions.
+• Test file-storage failures and recovery.
+• Test customer refusal and unavailability behaviour.
 
 Testing should prioritise business-critical behaviour rather than attempting to achieve an arbitrary percentage of code coverage.
 
@@ -239,6 +285,12 @@ Areas to examine include:
 • API error responses  
 • Production configuration
 
+• Review private signature storage and protected retrieval.
+• Review sign-off tenant isolation and technician authorisation.
+• Review CSRF protection on cookie-authenticated state-changing requests.
+• Review signature upload validation and sensitive-data logging.
+• Review signature evidence immutability, retention and backup arrangements.
+
 PHASE 13 — DEPLOYMENT
 
 Objectives:
@@ -252,6 +304,12 @@ Objectives:
 • Configure production builds  
 • Apply database schema/migrations  
 • Verify production functionality
+
+• Configure persistent private storage for customer signature images.
+• Verify that signature files cannot be accessed publicly.
+• Verify protected evidence retrieval in production.
+• Verify signature persistence across application restarts and deployments.
+• Verify production backup and recovery arrangements for signature evidence.
 
 PHASE 14 — DOCUMENTATION
 
@@ -267,6 +325,11 @@ Objectives:
 • Document security considerations  
 • Document deployment process  
 • Document important technical decisions
+• Document the customer signature capture workflow and API.
+• Document the customer-signature database migration.
+• Document the signature storage and retrieval architecture.
+• Document confirmation authorisation and evidence access rules.
+• Document the limitations of drawn signatures as identity evidence.
 
 PHASE 15 — PORTFOLIO PRESENTATION
 

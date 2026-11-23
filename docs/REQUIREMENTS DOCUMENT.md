@@ -148,7 +148,7 @@ Technicians must be able to record materials used during a job.
 
 Material records should be associated with the appropriate job.
 
-FR-15 — Job History
+## FR-15 — Job History
 
 The system must maintain a history of important job activity.
 
@@ -165,13 +165,35 @@ History may include:
 
 The purpose is to provide an evidence trail of the job lifecycle.
 
-FR-16 — Customer Sign-Off
+Customer confirmation history must identify when confirmation occurred and which authenticated technician captured it.
 
-The system must allow appropriate customer acknowledgement of completed work.
+Authorised users reviewing the Job must be able to access the preserved confirmation evidence according to their role and resource permissions.
 
-The exact technical implementation will be determined during UX and architecture design.
+## FR-16 — Customer Sign-Off
 
-Sign-off should be associated with the relevant job and recorded as part of the job's history.
+The system must allow a customer to acknowledge completion of the overall Job by drawing a signature on the technician's device.
+
+Customer confirmation must:
+
+- Be available only when the overall Job is in `COMPLETED` status.
+- Require the customer's full name and a non-empty on-screen signature.
+- Display the final completion summary and the acknowledgement wording before the customer signs.
+- Allow the signature to be cleared and redrawn before submission.
+- Preserve the exact completion summary and acknowledgement wording presented at confirmation, including the acknowledgement version.
+- Record the server-generated confirmation timestamp and the authenticated technician who captured the signature.
+- Store the signature image privately outside MySQL, with a database reference to the stored file.
+- Associate the confirmation with the overall Job and the Visit that completed that Job.
+- Allow authorised managers and the capturing technician to review the recorded evidence.
+- Record a `CUSTOMER_CONFIRMED` event in Job history.
+- Transition the Job from `COMPLETED` to `CUSTOMER_CONFIRMED` only after successful confirmation.
+- Permit only one final customer sign-off per Job.
+- Prevent unauthorised modification or replacement of completed sign-off evidence.
+
+If the customer refuses or is unavailable to sign, the Job must remain `COMPLETED`. The system must not fabricate a signature or automatically confirm the Job.
+
+The MVP does not require customer accounts, SMS verification, remote signing or advanced digital-signature infrastructure.
+
+A drawn signature records an acknowledgement but does not independently verify the signer's identity.
 
 FR-17 — Basic Invoice Information
 
@@ -389,6 +411,34 @@ Users must not be able to access another business's data if the system supports 
 BR-14  
 The application should maintain the integrity of historical records rather than silently overwriting important events.
 
+BR-15
+
+Only a Job in `COMPLETED` status may receive customer confirmation.
+
+BR-16
+
+Only the technician assigned to the completed Visit that caused the overall Job to enter `COMPLETED` status may capture the customer's signature.
+
+BR-17
+
+A Job may have only one final customer sign-off.
+
+BR-18
+
+Customer sign-off evidence must preserve the exact final completion summary, acknowledgement text, acknowledgement version, capturing technician and server-generated confirmation timestamp.
+
+BR-19
+
+Customer sign-off evidence must be stored privately and may be reviewed only by authorised managers belonging to the same business and the technician who captured the signature.
+
+BR-20
+
+Customer sign-off evidence must not be silently modified or replaced after successful confirmation.
+
+BR-21
+
+A refused, unavailable, invalid or unsuccessful signature submission must not transition the Job to `CUSTOMER_CONFIRMED`.
+
 6. MVP ACCEPTANCE CRITERIA
 
 The MVP should be considered functionally complete when a realistic job can successfully move through the following workflow:
@@ -411,3 +461,18 @@ The MVP should be considered functionally complete when a realistic job can succ
 15. The manager can review the completed job and its history.
 
 In addition, unauthorised users must be prevented from accessing or modifying resources they do not have permission to access.  
+
+Customer sign-off acceptance criteria:
+
+- A technician who completed the final Visit can present the completed Job's summary and acknowledgement wording to the customer.
+- A customer can enter their name, draw a signature, clear it and redraw it.
+- The system rejects an empty signature or missing customer name.
+- The system prevents confirmation before the overall Job is completed.
+- The system prevents duplicate confirmation of the same Job.
+- Successful confirmation preserves the signature image, completion summary, acknowledgement wording and version, technician identity and server timestamp.
+- Successful confirmation records a Job history event and transitions the Job to `CUSTOMER_CONFIRMED`.
+- An authorised manager can review the evidence.
+- The capturing technician can review the evidence.
+- Another technician or a user from another business cannot access the evidence.
+- Failed storage or database operations do not produce a falsely confirmed Job.
+- Refusal or unavailability does not result in a fabricated confirmation.
