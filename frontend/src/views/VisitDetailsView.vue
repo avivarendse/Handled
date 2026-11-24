@@ -1,7 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { demoVisits, visitStatusLabels } from '../data/demoVisits'
+import { demoVisits, getVisitRecordCounts, visitStatusLabels } from '../data/demoVisits'
 
 const route = useRoute()
 const visit = computed(() =>
@@ -17,6 +17,9 @@ const scheduledDate = computed(() =>
 )
 const timeRange = computed(() =>
   visit.value ? `${visit.value.start.slice(11)}–${visit.value.end}` : '',
+)
+const recordCounts = computed(() =>
+  visit.value ? getVisitRecordCounts(visit.value.id) : { notes: 0, photos: 0, materials: 0 },
 )
 const actionLabel = computed(() => {
   if (visit.value?.status === 'SCHEDULED') return 'Start visit'
@@ -73,6 +76,42 @@ const actionLabel = computed(() => {
           </dl>
         </section>
       </div>
+
+      <section
+        v-if="visit.status === 'IN_PROGRESS'"
+        class="records-section"
+        aria-labelledby="records-heading"
+      >
+        <div class="records-heading">
+          <h2 id="records-heading">Visit records</h2>
+          <p>Demonstration counts. Record management is not available yet.</p>
+        </div>
+        <ul class="record-list">
+          <li class="record-row">
+            <span>Notes</span>
+            <span class="record-count">
+              {{ recordCounts.notes }}
+              {{ recordCounts.notes === 1 ? 'demonstration record' : 'demonstration records' }}
+            </span>
+          </li>
+          <li class="record-row">
+            <span>Photos</span>
+            <span class="record-count">
+              {{ recordCounts.photos }}
+              {{ recordCounts.photos === 1 ? 'demonstration record' : 'demonstration records' }}
+            </span>
+          </li>
+          <li class="record-row">
+            <span>Materials</span>
+            <span class="record-count">
+              {{ recordCounts.materials }}
+              {{
+                recordCounts.materials === 1 ? 'demonstration record' : 'demonstration records'
+              }}
+            </span>
+          </li>
+        </ul>
+      </section>
 
       <div v-if="actionLabel" class="action-section">
         <button class="primary-action" type="button" disabled aria-describedby="demo-action-note">
@@ -176,6 +215,45 @@ dd {
 .description {
   max-width: 65ch;
 }
+.records-section {
+  grid-area: records;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #d9ddda;
+}
+.records-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+.records-heading h2 {
+  margin-bottom: 0;
+}
+.records-heading p {
+  margin: 0;
+  color: #606b65;
+  font-size: 13px;
+}
+.record-list {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+.record-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  border-bottom: 1px solid #d9ddda;
+}
+.record-count {
+  color: #606b65;
+  font-size: 13px;
+  text-align: right;
+}
 .action-section {
   grid-area: action;
   padding-top: 18px;
@@ -209,6 +287,7 @@ dd {
   grid-template-areas:
     'heading'
     'details'
+    'records'
     'action';
 }
 .not-found {
@@ -222,7 +301,8 @@ dd {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       'heading action'
-      'details details';
+      'details details'
+      'records records';
     column-gap: 32px;
   }
   .action-section {

@@ -2,7 +2,12 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import App from '../App.vue'
 import router from '../router'
-import { visitsForGroup } from '../data/demoVisits'
+import {
+  demoVisitRecords,
+  demoVisits,
+  getVisitRecordCounts,
+  visitsForGroup,
+} from '../data/demoVisits'
 
 describe('My visits', () => {
   it('opens through the default route and renders appointments in time order', async () => {
@@ -85,4 +90,55 @@ describe('My visits', () => {
     await flushPromises()
     expect(router.currentRoute.value.path).toBe('/my-visits')
   })
+
+  it('shows visit-specific demonstration records only for in-progress visits', async () => {
+    await router.push('/my-visits/101')
+    const wrapper = mount(App, { global: { plugins: [router] } })
+    await flushPromises()
+
+    expect(wrapper.get('.records-section h2').text()).toBe('Visit records')
+    expect(
+      wrapper.findAll('.record-row').map((row) => [
+        row.find('span').text(),
+        row.find('.record-count').text(),
+      ]),
+    ).toEqual([
+      ['Notes', '2 demonstration records'],
+      ['Photos', '1 demonstration record'],
+      ['Materials', '1 demonstration record'],
+    ])
+    expect(wrapper.find('.record-list button, .record-list a').exists()).toBe(false)
+    expect(getVisitRecordCounts(101)).toEqual({ notes: 2, photos: 1, materials: 1 })
+    expect(getVisitRecordCounts(104)).toEqual({ notes: 1, photos: 2, materials: 0 })
+    expect(demoVisitRecords.every((record) => demoVisits.some((item) => item.id === record.visitId)))
+      .toBe(true)
+
+    await router.push('/my-visits/104')
+    await flushPromises()
+    expect(wrapper.find('.records-section').exists()).toBe(false)
+    expect(wrapper.find('button.primary-action').text()).toBe('Start visit')
+  })
+
+  it.each(['COMPLETED', 'CANCELLED'])(
+    'keeps %s visits read-only',
+    async (status) => {
+      const visit = demoVisits.find((candidate) => candidate.id === 101)
+      const originalStatus = visit.status
+      visit.status = status
+      let wrapper
+      try {
+        await router.push('/my-visits')
+        wrapper = mount(App, { global: { plugins: [router] } })
+        await router.push('/my-visits/101')
+        await flushPromises()
+
+        expect(wrapper.find('.primary-action').exists()).toBe(false)
+        expect(wrapper.find('.records-section').exists()).toBe(false)
+        expect(wrapper.find('button').exists()).toBe(false)
+      } finally {
+        if (wrapper) wrapper.unmount()
+        visit.status = originalStatus
+      }
+    },
+  )
 })

@@ -46,6 +46,27 @@ export const demoVisits = [
   },
 ]
 
+export const demoVisitRecords = [
+  { id: 1, visitId: 101, category: 'notes' },
+  { id: 2, visitId: 101, category: 'notes' },
+  { id: 3, visitId: 101, category: 'photos' },
+  { id: 4, visitId: 101, category: 'materials' },
+  { id: 5, visitId: 102, category: 'notes' },
+  { id: 6, visitId: 102, category: 'materials' },
+  { id: 7, visitId: 103, category: 'photos' },
+  { id: 8, visitId: 104, category: 'notes' },
+  { id: 9, visitId: 104, category: 'photos' },
+  { id: 10, visitId: 104, category: 'photos' },
+]
+
+export function getVisitRecordCounts(visitId) {
+  const counts = { notes: 0, photos: 0, materials: 0 }
+  for (const record of demoVisitRecords) {
+    if (record.visitId === visitId) counts[record.category] += 1
+  }
+  return counts
+}
+
 export function visitsForGroup(visits, group, today) {
   return visits
     .filter((visit) => {
