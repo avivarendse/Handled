@@ -59,13 +59,14 @@ describe('My visits', () => {
     expect(wrapper.findAll('li')[1].text()).toContain('In progress')
     await router.push('/my-visits/102')
     await flushPromises()
-    expect(wrapper.get('.primary-action').element.disabled).toBe(true)
+    expect(wrapper.get('.primary-action').element.disabled).toBe(false)
     expect(wrapper.find('.records-section').exists()).toBe(true)
     expect(store.completeVisit(102, { summary: 'Filter replaced', outcome: 'JOB_COMPLETE' }).ok).toBe(true)
     await flushPromises()
     expect(wrapper.get('.status').text()).toBe('Completed')
-    expect(wrapper.find('.records-section').exists()).toBe(false)
+    expect(wrapper.find('.records-section').exists()).toBe(true)
     expect(wrapper.find('.primary-action').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Filter replaced')
     await router.push('/my-visits')
     await flushPromises()
     expect(wrapper.find('a[href="/my-visits/102"]').exists()).toBe(false)
@@ -107,6 +108,7 @@ describe('My visits', () => {
     expect(wrapper.text()).toContain('11:30–12:15')
     expect(wrapper.text()).toContain('Completed')
     expect(wrapper.find('.primary-action').exists()).toBe(false)
+    expect(wrapper.findAll('.record-link')).toHaveLength(3)
     await router.push('/my-visits/102')
     await flushPromises()
     expect(wrapper.get('.primary-action').text()).toBe('Start visit')
@@ -131,7 +133,7 @@ describe('My visits', () => {
     expect(router.currentRoute.value.path).toBe('/my-visits')
   })
 
-  it('shows visit-specific demonstration records only for in-progress visits', async () => {
+  it('shows visit-specific records for in-progress and completed visits', async () => {
     await router.push('/my-visits/101')
     const wrapper = mountApp()
     await flushPromises()
@@ -160,7 +162,8 @@ describe('My visits', () => {
 
     await router.push('/my-visits/104')
     await flushPromises()
-    expect(wrapper.find('.records-section').exists()).toBe(false)
+    expect(wrapper.find('.records-section').exists()).toBe(true)
+    expect(wrapper.findAll('.record-link')).toHaveLength(3)
     expect(wrapper.find('button.primary-action').exists()).toBe(false)
   })
 
@@ -217,7 +220,7 @@ describe('My visits', () => {
       await flushPromises()
 
       expect(wrapper.find('.primary-action').exists()).toBe(false)
-      expect(wrapper.find('.records-section').exists()).toBe(false)
+      expect(wrapper.find('.records-section').exists()).toBe(status === 'COMPLETED')
       expect(wrapper.find('button').exists()).toBe(false)
 
       await router.push('/my-visits/101/notes')
