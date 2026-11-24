@@ -1,8 +1,12 @@
-import { createRouter, createWebHistory } from 'vue-router'
+﻿import { createRouter, createWebHistory } from 'vue-router'
+import MyVisitsView from '../views/MyVisitsView.vue'
+import VisitDetailsView from '../views/VisitDetailsView.vue'
 
-const router = createRouter({
+export default createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [],
+  routes: [
+    { path: '/', redirect: { name: 'my-visits' } },
+    { path: '/my-visits', name: 'my-visits', component: MyVisitsView },
+    { path: '/my-visits/:visitId', name: 'visit-details', component: VisitDetailsView },
+  ],
 })
-
-export default router
