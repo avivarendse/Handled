@@ -47,14 +47,38 @@ export const demoVisits = [
 ]
 
 export const demoVisitRecords = [
-  { id: 1, visitId: 101, category: 'notes' },
-  { id: 2, visitId: 101, category: 'notes' },
+  {
+    id: 1,
+    visitId: 101,
+    category: 'notes',
+    text: 'Checked pump pressure and seals; no leaks observed.',
+    createdAt: '2026-11-23T09:05:00.000Z',
+  },
+  {
+    id: 2,
+    visitId: 101,
+    category: 'notes',
+    text: 'Adjusted the pressure setting and confirmed the pump restarted.',
+    createdAt: '2026-11-23T09:15:00.000Z',
+  },
   { id: 3, visitId: 101, category: 'photos' },
   { id: 4, visitId: 101, category: 'materials' },
-  { id: 5, visitId: 102, category: 'notes' },
+  {
+    id: 5,
+    visitId: 102,
+    category: 'notes',
+    text: 'Customer requested the filter replacement be noted for follow-up.',
+    createdAt: '2026-11-23T11:30:00.000Z',
+  },
   { id: 6, visitId: 102, category: 'materials' },
   { id: 7, visitId: 103, category: 'photos' },
-  { id: 8, visitId: 104, category: 'notes' },
+  {
+    id: 8,
+    visitId: 104,
+    category: 'notes',
+    text: 'Previous visit: checked the pump controller and recorded its settings.',
+    createdAt: '2026-11-20T10:00:00.000Z',
+  },
   { id: 9, visitId: 104, category: 'photos' },
   { id: 10, visitId: 104, category: 'photos' },
 ]

@@ -1,7 +1,10 @@
-﻿import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createPinia } from 'pinia'
 import { flushPromises, mount } from '@vue/test-utils'
 import App from '../App.vue'
 import router from '../router'
+import { useVisitNotesStore } from '../stores/visitNotes'
+import { useVisitPhotosStore } from '../stores/visitPhotos'
 import {
   demoVisitRecords,
   demoVisits,
@@ -9,10 +12,22 @@ import {
   visitsForGroup,
 } from '../data/demoVisits'
 
+const mountedWrappers = []
+const mountApp = () => {
+  const wrapper = mount(App, { global: { plugins: [createPinia(), router] } })
+  mountedWrappers.push(wrapper)
+  return wrapper
+}
+
+afterEach(() => {
+  for (const wrapper of mountedWrappers) wrapper.unmount()
+  mountedWrappers.length = 0
+})
+
 describe('My visits', () => {
   it('opens through the default route and renders appointments in time order', async () => {
     await router.push('/')
-    const wrapper = mount(App, { global: { plugins: [router] } })
+    const wrapper = mountApp()
     expect(router.currentRoute.value.path).toBe('/my-visits')
     expect(wrapper.get('h1').text()).toBe('My visits')
     expect(wrapper.findAll('time').map((time) => time.text())).toEqual(['08:30', '11:00', '13:30'])
@@ -51,7 +66,7 @@ describe('My visits', () => {
 
   it('loads the selected visit from its URL and provides a working back link', async () => {
     await router.push('/my-visits')
-    const wrapper = mount(App, { global: { plugins: [router] } })
+    const wrapper = mountApp()
     await wrapper.get('a[href="/my-visits/101"]').trigger('click')
     await flushPromises()
 
@@ -79,7 +94,7 @@ describe('My visits', () => {
 
   it('shows a useful not-found page for an unknown visit ID', async () => {
     await router.push('/my-visits/unknown-visit')
-    const wrapper = mount(App, { global: { plugins: [router] } })
+    const wrapper = mountApp()
     await flushPromises()
 
     expect(wrapper.get('h1').text()).toBe('Visit not found')
@@ -93,7 +108,7 @@ describe('My visits', () => {
 
   it('shows visit-specific demonstration records only for in-progress visits', async () => {
     await router.push('/my-visits/101')
-    const wrapper = mount(App, { global: { plugins: [router] } })
+    const wrapper = mountApp()
     await flushPromises()
 
     expect(wrapper.get('.records-section h2').text()).toBe('Visit records')
@@ -103,11 +118,18 @@ describe('My visits', () => {
         row.find('.record-count').text(),
       ]),
     ).toEqual([
-      ['Notes', '2 demonstration records'],
-      ['Photos', '1 demonstration record'],
-      ['Materials', '1 demonstration record'],
+      ['Notes', '2'],
+      ['Photos', '1'],
+      ['Materials', '1'],
     ])
-    expect(wrapper.find('.record-list button, .record-list a').exists()).toBe(false)
+    expect(wrapper.get('.record-link').attributes('href')).toBe('/my-visits/101/notes')
+    expect(wrapper.findAll('.record-link').map((link) => link.attributes('href'))).toEqual([
+      '/my-visits/101/notes',
+      '/my-visits/101/photos',
+    ])
+    expect(wrapper.find('.record-row:last-child a, .record-row:last-child button').exists()).toBe(
+      false,
+    )
     expect(getVisitRecordCounts(101)).toEqual({ notes: 2, photos: 1, materials: 1 })
     expect(getVisitRecordCounts(104)).toEqual({ notes: 1, photos: 2, materials: 0 })
     expect(demoVisitRecords.every((record) => demoVisits.some((item) => item.id === record.visitId)))
@@ -119,6 +141,48 @@ describe('My visits', () => {
     expect(wrapper.find('button.primary-action').text()).toBe('Start visit')
   })
 
+  it('opens the selected visit photos and updates its count after adding photos', async () => {
+    await router.push('/my-visits/101')
+    const wrapper = mountApp()
+    const photosStore = useVisitPhotosStore()
+    const originalCreateObjectURL = URL.createObjectURL
+    const originalRevokeObjectURL = URL.revokeObjectURL
+    URL.createObjectURL = vi.fn(() => 'blob:added-photo')
+    URL.revokeObjectURL = vi.fn()
+
+    try {
+      await wrapper.get('a[href="/my-visits/101/photos"]').trigger('click')
+      await flushPromises()
+      expect(wrapper.get('h1').text()).toBe('Booster pump service')
+      expect(wrapper.text()).toContain('Cedar House')
+      expect(wrapper.findAll('.confirmed-grid .photo-card')).toHaveLength(1)
+
+      const file = new File(['image'], 'repair.jpg', { type: 'image/jpeg' })
+      const input = wrapper.get('input[type="file"]')
+      Object.defineProperty(input.element, 'files', { configurable: true, value: [file] })
+      await input.trigger('change')
+      await flushPromises()
+      expect(wrapper.findAll('.pending-grid .photo-card')).toHaveLength(1)
+
+      await wrapper.get('.primary-action').trigger('click')
+      expect(wrapper.get('[role="status"]').text()).toContain('1 photo added')
+      expect(photosStore.photosForVisit(101)).toHaveLength(2)
+      expect(photosStore.photosForVisit(104)).toHaveLength(2)
+
+      await wrapper.get('.back-link').trigger('click')
+      await flushPromises()
+      expect(router.currentRoute.value.path).toBe('/my-visits/101')
+      expect(wrapper.get('.record-link[href="/my-visits/101/photos"] .record-count').text()).toBe(
+        '2',
+      )
+    } finally {
+      if (originalCreateObjectURL) URL.createObjectURL = originalCreateObjectURL
+      else delete URL.createObjectURL
+      if (originalRevokeObjectURL) URL.revokeObjectURL = originalRevokeObjectURL
+      else delete URL.revokeObjectURL
+    }
+  })
+
   it.each(['COMPLETED', 'CANCELLED'])(
     'keeps %s visits read-only',
     async (status) => {
@@ -128,12 +192,17 @@ describe('My visits', () => {
       let wrapper
       try {
         await router.push('/my-visits')
-        wrapper = mount(App, { global: { plugins: [router] } })
+        wrapper = mountApp()
         await router.push('/my-visits/101')
         await flushPromises()
 
         expect(wrapper.find('.primary-action').exists()).toBe(false)
         expect(wrapper.find('.records-section').exists()).toBe(false)
+        expect(wrapper.find('button').exists()).toBe(false)
+
+        await router.push('/my-visits/101/notes')
+        await flushPromises()
+        expect(wrapper.find('textarea').exists()).toBe(false)
         expect(wrapper.find('button').exists()).toBe(false)
       } finally {
         if (wrapper) wrapper.unmount()
@@ -141,4 +210,108 @@ describe('My visits', () => {
       }
     },
   )
+
+  it('adds a temporary note, validates input and updates the visit count', async () => {
+    await router.push('/my-visits/101')
+    const wrapper = mountApp()
+    await wrapper.get('.record-link').trigger('click')
+    await flushPromises()
+
+    expect(wrapper.get('h1').text()).toBe('Booster pump service')
+    expect(wrapper.text()).toContain('Cedar House')
+    expect(wrapper.findAll('.note-text').map((note) => note.text())).toEqual([
+      'Adjusted the pressure setting and confirmed the pump restarted.',
+      'Checked pump pressure and seals; no leaks observed.',
+    ])
+
+    const textarea = wrapper.get('textarea')
+    const invalidDraft = ' \n  '
+    await textarea.setValue(invalidDraft)
+    await wrapper.get('form').trigger('submit')
+    expect(wrapper.get('[role="alert"]').text()).toBe('Enter a note before adding it.')
+    expect(textarea.element.value).toBe(invalidDraft)
+    expect(textarea.attributes('aria-invalid')).toBe('true')
+
+    await textarea.setValue('  Rechecked the pressure after restart.  ')
+    await wrapper.get('form').trigger('submit')
+    await flushPromises()
+    expect(wrapper.findAll('.note-text')[0].text()).toBe('Rechecked the pressure after restart.')
+    expect(textarea.element.value).toBe('')
+    expect(wrapper.get('[role="status"]').text()).toContain('Changes are temporary')
+
+    await wrapper.get('.back-link').trigger('click')
+    await flushPromises()
+    expect(router.currentRoute.value.path).toBe('/my-visits/101')
+    expect(wrapper.get('.record-link .record-count').text()).toBe('3')
+  })
+
+  it('keeps notes isolated for visits belonging to the same job', async () => {
+    await router.push('/my-visits/101/notes')
+    const wrapper = mountApp()
+    await wrapper.get('textarea').setValue('Only for visit 101')
+    await wrapper.get('form').trigger('submit')
+    await router.push('/my-visits/104/notes')
+    await flushPromises()
+
+    expect(wrapper.get('h1').text()).toBe('Booster pump service')
+    expect(wrapper.text()).toContain('Previous visit: checked the pump controller')
+    expect(wrapper.text()).not.toContain('Only for visit 101')
+    expect(wrapper.findAll('.note-text')).toHaveLength(1)
+    expect(wrapper.find('textarea').exists()).toBe(false)
+  })
+
+  it('protects an unsaved note when navigating away', async () => {
+    await router.push('/my-visits/101/notes')
+    const wrapper = mountApp()
+    await wrapper.get('textarea').setValue('A draft that has not been added')
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    try {
+      await wrapper.get('.back-link').trigger('click')
+      await flushPromises()
+      expect(confirm).toHaveBeenCalledOnce()
+      expect(router.currentRoute.value.path).toBe('/my-visits/101/notes')
+      expect(wrapper.get('textarea').element.value).toBe('A draft that has not been added')
+
+      confirm.mockReturnValue(true)
+      await wrapper.get('.back-link').trigger('click')
+      await flushPromises()
+      expect(router.currentRoute.value.path).toBe('/my-visits/101')
+    } finally {
+      confirm.mockRestore()
+    }
+  })
+
+  it('shows an empty state and handles unknown note routes', async () => {
+    await router.push('/my-visits/103/notes')
+    const wrapper = mountApp()
+    expect(wrapper.get('.empty-state').text()).toContain('No notes have been recorded')
+    expect(wrapper.find('textarea').exists()).toBe(false)
+
+    await router.push('/my-visits/999/notes')
+    await flushPromises()
+    expect(wrapper.get('h1').text()).toBe('Visit not found')
+    expect(wrapper.find('textarea').exists()).toBe(false)
+    expect(wrapper.get('.back-link').attributes('href')).toBe('/my-visits')
+  })
+
+  it('resets added notes when a fresh Pinia instance is created', () => {
+    const store = useVisitNotesStore(createPinia())
+    store.addNote(101, 'Temporary note')
+    expect(store.notesForVisit(101)).toHaveLength(3)
+
+    const reloadedStore = useVisitNotesStore(createPinia())
+    expect(reloadedStore.notesForVisit(101)).toHaveLength(2)
+    expect(reloadedStore.notesForVisit(101).map((note) => note.text)).not.toContain(
+      'Temporary note',
+    )
+  })
+
+  it('resets added photos when a fresh Pinia instance is created', () => {
+    const store = useVisitPhotosStore(createPinia())
+    store.addPhotos(101, [{ name: 'Temporary photo', url: 'blob:temporary-photo' }])
+    expect(store.photosForVisit(101)).toHaveLength(2)
+
+    const reloadedStore = useVisitPhotosStore(createPinia())
+    expect(reloadedStore.photosForVisit(101)).toHaveLength(1)
+  })
 })

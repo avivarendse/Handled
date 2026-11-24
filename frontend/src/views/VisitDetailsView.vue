@@ -2,8 +2,12 @@
 import { computed } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { demoVisits, getVisitRecordCounts, visitStatusLabels } from '../data/demoVisits'
+import { useVisitNotesStore } from '../stores/visitNotes'
+import { useVisitPhotosStore } from '../stores/visitPhotos'
 
 const route = useRoute()
+const visitNotesStore = useVisitNotesStore()
+const visitPhotosStore = useVisitPhotosStore()
 const visit = computed(() =>
   demoVisits.find((candidate) => String(candidate.id) === route.params.visitId),
 )
@@ -19,7 +23,13 @@ const timeRange = computed(() =>
   visit.value ? `${visit.value.start.slice(11)}–${visit.value.end}` : '',
 )
 const recordCounts = computed(() =>
-  visit.value ? getVisitRecordCounts(visit.value.id) : { notes: 0, photos: 0, materials: 0 },
+  visit.value
+    ? {
+        ...getVisitRecordCounts(visit.value.id),
+        notes: visitNotesStore.notesForVisit(visit.value.id).length,
+        photos: visitPhotosStore.photosForVisit(visit.value.id).length,
+      }
+    : { notes: 0, photos: 0, materials: 0 },
 )
 const actionLabel = computed(() => {
   if (visit.value?.status === 'SCHEDULED') return 'Start visit'
@@ -84,31 +94,34 @@ const actionLabel = computed(() => {
       >
         <div class="records-heading">
           <h2 id="records-heading">Visit records</h2>
-          <p>Demonstration counts. Record management is not available yet.</p>
+          <p>Notes and photos are temporary; materials are not implemented.</p>
         </div>
         <ul class="record-list">
           <li class="record-row">
-            <span>Notes</span>
-            <span class="record-count">
-              {{ recordCounts.notes }}
-              {{ recordCounts.notes === 1 ? 'demonstration record' : 'demonstration records' }}
-            </span>
+            <RouterLink
+              class="record-link"
+              :to="{ name: 'visit-notes', params: { visitId: visit.id } }"
+            >
+              <span>Notes</span>
+              <span class="record-meta">
+                <span class="record-count">{{ recordCounts.notes }}</span>
+              </span>
+            </RouterLink>
           </li>
           <li class="record-row">
-            <span>Photos</span>
-            <span class="record-count">
-              {{ recordCounts.photos }}
-              {{ recordCounts.photos === 1 ? 'demonstration record' : 'demonstration records' }}
-            </span>
+            <RouterLink
+              class="record-link"
+              :to="{ name: 'visit-photos', params: { visitId: visit.id } }"
+            >
+              <span>Photos</span>
+              <span class="record-meta">
+                <span class="record-count">{{ recordCounts.photos }}</span>
+              </span>
+            </RouterLink>
           </li>
           <li class="record-row">
             <span>Materials</span>
-            <span class="record-count">
-              {{ recordCounts.materials }}
-              {{
-                recordCounts.materials === 1 ? 'demonstration record' : 'demonstration records'
-              }}
-            </span>
+            <span class="record-count">{{ recordCounts.materials }}</span>
           </li>
         </ul>
       </section>
@@ -217,9 +230,8 @@ dd {
 }
 .records-section {
   grid-area: records;
-  margin-top: 20px;
+  margin-top: 0;
   padding-top: 16px;
-  border-top: 1px solid #d9ddda;
 }
 .records-heading {
   display: flex;
@@ -248,6 +260,29 @@ dd {
   gap: 16px;
   min-height: 48px;
   border-bottom: 1px solid #d9ddda;
+}
+.record-link {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  color: inherit;
+  text-decoration: none;
+}
+.record-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+.record-meta::after {
+  width: 7px;
+  height: 7px;
+  border: solid currentColor;
+  border-width: 0 1px 1px 0;
+  content: '';
+  transform: rotate(-45deg);
 }
 .record-count {
   color: #606b65;

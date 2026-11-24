@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="420" viewBox="0 0 640 420">
+  <rect width="640" height="420" fill="#e8eee9"/>
+  <rect y="270" width="640" height="150" fill="#d2ddd5"/>
+  <path d="M92 272h456" stroke="#a9b8ad" stroke-width="8"/>
+  <rect x="190" y="130" width="260" height="140" rx="18" fill="#607f6e"/>
+  <circle cx="320" cy="200" r="52" fill="#eaf0eb"/>
+  <circle cx="320" cy="200" r="32" fill="#8ca99a"/>
+  <path d="M320 168v64m-32-32h64" stroke="#355e4e" stroke-width="8"/>
+  <path d="M220 130v-35h200v35M450 197h62v50h-62M128 210h62" fill="none" stroke="#355e4e" stroke-width="12"/>
+  <text x="320" y="350" fill="#355e4e" font-family="Arial, sans-serif" font-size="24" text-anchor="middle">DEMONSTRATION PHOTO</text>
+</svg>
