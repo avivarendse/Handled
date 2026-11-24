@@ -1,3 +1,4 @@
+import { useVisitsStore } from './visits'
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { demoVisitRecords } from '../data/demoVisits'
@@ -14,6 +15,7 @@ const demoMaterials = demoVisitRecords
   }))
 
 export const useVisitMaterialsStore = defineStore('visit-materials', () => {
+  const visitsStore = useVisitsStore()
   const materials = ref(demoMaterials.map((material) => ({ ...material })))
   let nextId = Math.max(0, ...demoVisitRecords.map((record) => record.id)) + 1
 
@@ -24,6 +26,7 @@ export const useVisitMaterialsStore = defineStore('visit-materials', () => {
   }
 
   function addMaterial(visitId, material) {
+    if (!visitsStore.canAddRecords(visitId)) return null
     const record = {
       id: nextId++,
       visitId: Number(visitId),

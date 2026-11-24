@@ -1,13 +1,13 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createPinia } from 'pinia'
 import { flushPromises, mount } from '@vue/test-utils'
+import { useVisitsStore } from '../stores/visits'
 import App from '../App.vue'
 import router from '../router'
 import { useVisitNotesStore } from '../stores/visitNotes'
 import { useVisitPhotosStore } from '../stores/visitPhotos'
 import {
   demoVisitRecords,
-  demoVisits,
   getVisitRecordCounts,
   visitsForGroup,
 } from '../data/demoVisits'
@@ -42,13 +42,35 @@ describe('My visits', () => {
     ])
     const [, upcoming, completed] = wrapper.findAll('button')
     await upcoming.trigger('click')
-    expect(wrapper.get('h2').text()).toContain('25 November')
-    expect(wrapper.findAll('li')).toHaveLength(1)
-    expect(wrapper.get('li a').attributes('href')).toBe('/my-visits/104')
+    expect(wrapper.get('h2').text()).toBe('No upcoming visits')
+    expect(wrapper.findAll('li')).toHaveLength(0)
     await completed.trigger('click')
     expect(completed.attributes('aria-pressed')).toBe('true')
-    expect(wrapper.get('h2').text()).toBe('No completed visits')
-    expect(wrapper.findAll('li')).toHaveLength(0)
+    expect(wrapper.get('h2').text()).toContain('20 November')
+    expect(wrapper.get('li a').attributes('href')).toBe('/my-visits/104')
+  })
+
+  it('reflects lifecycle actions in the mounted list and details', async () => {
+    await router.push('/my-visits')
+    const wrapper = mountApp()
+    const store = useVisitsStore()
+    expect(store.startVisit(102).ok).toBe(true)
+    await flushPromises()
+    expect(wrapper.findAll('li')[1].text()).toContain('In progress')
+    await router.push('/my-visits/102')
+    await flushPromises()
+    expect(wrapper.get('.primary-action').element.disabled).toBe(true)
+    expect(wrapper.find('.records-section').exists()).toBe(true)
+    expect(store.completeVisit(102, { summary: 'Filter replaced', outcome: 'JOB_COMPLETE' }).ok).toBe(true)
+    await flushPromises()
+    expect(wrapper.get('.status').text()).toBe('Completed')
+    expect(wrapper.find('.records-section').exists()).toBe(false)
+    expect(wrapper.find('.primary-action').exists()).toBe(false)
+    await router.push('/my-visits')
+    await flushPromises()
+    expect(wrapper.find('a[href="/my-visits/102"]').exists()).toBe(false)
+    await wrapper.findAll('button')[2].trigger('click')
+    expect(wrapper.find('a[href="/my-visits/102"]').exists()).toBe(true)
   })
 
   it('groups by appointment date and keeps finished visits in Completed', () => {
@@ -81,9 +103,12 @@ describe('My visits', () => {
     await router.push('/my-visits/104')
     await flushPromises()
     expect(wrapper.get('h1').text()).toBe('Booster pump service')
-    expect(wrapper.text()).toContain('Wednesday, 25 November 2026')
-    expect(wrapper.text()).toContain('09:00–09:45')
-    expect(wrapper.text()).toContain('Scheduled')
+    expect(wrapper.text()).toContain('Friday, 20 November 2026')
+    expect(wrapper.text()).toContain('11:30–12:15')
+    expect(wrapper.text()).toContain('Completed')
+    expect(wrapper.find('.primary-action').exists()).toBe(false)
+    await router.push('/my-visits/102')
+    await flushPromises()
     expect(wrapper.get('.primary-action').text()).toBe('Start visit')
 
     await wrapper.get('.back-link').trigger('click')
@@ -130,13 +155,13 @@ describe('My visits', () => {
     ])
     expect(getVisitRecordCounts(101)).toEqual({ notes: 2, photos: 1, materials: 1 })
     expect(getVisitRecordCounts(104)).toEqual({ notes: 1, photos: 2, materials: 0 })
-    expect(demoVisitRecords.every((record) => demoVisits.some((item) => item.id === record.visitId)))
+    expect(demoVisitRecords.every((record) => useVisitsStore().visitById(record.visitId)))
       .toBe(true)
 
     await router.push('/my-visits/104')
     await flushPromises()
     expect(wrapper.find('.records-section').exists()).toBe(false)
-    expect(wrapper.find('button.primary-action').text()).toBe('Start visit')
+    expect(wrapper.find('button.primary-action').exists()).toBe(false)
   })
 
   it('opens the selected visit photos and updates its count after adding photos', async () => {
@@ -184,33 +209,26 @@ describe('My visits', () => {
   it.each(['COMPLETED', 'CANCELLED'])(
     'keeps %s visits read-only',
     async (status) => {
-      const visit = demoVisits.find((candidate) => candidate.id === 101)
-      const originalStatus = visit.status
-      visit.status = status
-      let wrapper
-      try {
-        await router.push('/my-visits')
-        wrapper = mountApp()
-        await router.push('/my-visits/101')
-        await flushPromises()
+      await router.push('/my-visits')
+      const wrapper = mountApp()
+      useVisitsStore().visitById(101).status = status
+      await flushPromises()
+      await router.push('/my-visits/101')
+      await flushPromises()
 
-        expect(wrapper.find('.primary-action').exists()).toBe(false)
-        expect(wrapper.find('.records-section').exists()).toBe(false)
-        expect(wrapper.find('button').exists()).toBe(false)
+      expect(wrapper.find('.primary-action').exists()).toBe(false)
+      expect(wrapper.find('.records-section').exists()).toBe(false)
+      expect(wrapper.find('button').exists()).toBe(false)
 
-        await router.push('/my-visits/101/notes')
-        await flushPromises()
-        expect(wrapper.find('textarea').exists()).toBe(false)
-        expect(wrapper.find('button').exists()).toBe(false)
+      await router.push('/my-visits/101/notes')
+      await flushPromises()
+      expect(wrapper.find('textarea').exists()).toBe(false)
+      expect(wrapper.find('button').exists()).toBe(false)
 
-        await router.push('/my-visits/101/materials')
-        await flushPromises()
-        expect(wrapper.find('.material-form').exists()).toBe(false)
-        expect(wrapper.find('button').exists()).toBe(false)
-      } finally {
-        if (wrapper) wrapper.unmount()
-        visit.status = originalStatus
-      }
+      await router.push('/my-visits/101/materials')
+      await flushPromises()
+      expect(wrapper.find('.material-form').exists()).toBe(false)
+      expect(wrapper.find('button').exists()).toBe(false)
     },
   )
 

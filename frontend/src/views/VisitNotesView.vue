@@ -1,18 +1,19 @@
 <script setup>
+import { useVisitsStore } from '../stores/visits'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, RouterLink, useRoute } from 'vue-router'
-import { demoVisits, visitStatusLabels } from '../data/demoVisits'
+import { visitStatusLabels } from '../data/demoVisits'
 import { useVisitNotesStore } from '../stores/visitNotes'
 
+const visitsStore = useVisitsStore()
 const route = useRoute()
 const visitNotesStore = useVisitNotesStore()
 const draft = ref('')
 const validationMessage = ref('')
 const confirmationMessage = ref('')
-const visit = computed(() =>
-  demoVisits.find((candidate) => String(candidate.id) === route.params.visitId),
-)
-const canAddNotes = computed(() => visit.value?.status === 'IN_PROGRESS')
+const visit = computed(() => visitsStore.visitById(route.params.visitId))
+const job = computed(() => visitsStore.jobById(visit.value?.jobId))
+const canAddNotes = computed(() => visitsStore.canAddRecords(route.params.visitId))
 const visitNotes = computed(() =>
   visit.value ? visitNotesStore.notesForVisit(visit.value.id) : [],
 )
@@ -34,7 +35,7 @@ function addNote() {
     return
   }
 
-  visitNotesStore.addNote(visit.value.id, text)
+  if (!visitNotesStore.addNote(visit.value?.id, text)) return
   draft.value = ''
   confirmationMessage.value = 'Note added. Changes are temporary and reset when this app reloads.'
 }
@@ -81,8 +82,8 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', protectReload))
     <template v-if="visit">
       <header class="notes-header">
         <p class="eyebrow">Visit notes</p>
-        <h1>{{ visit.job.title }}</h1>
-        <p class="customer">{{ visit.job.customer }}</p>
+        <h1>{{ job.title }}</h1>
+        <p class="customer">{{ job.customer }}</p>
         <p class="visit-status">{{ visitStatusLabels[visit.status] }}</p>
       </header>
 

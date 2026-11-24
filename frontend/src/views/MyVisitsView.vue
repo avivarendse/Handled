@@ -1,13 +1,15 @@
 ﻿<script setup>
+import { useVisitsStore } from '../stores/visits'
 import { computed, ref } from 'vue'
 import VisitListItem from '../components/VisitListItem.vue'
-import { demoToday, demoVisits, visitsForGroup } from '../data/demoVisits'
+import { demoToday, visitsForGroup } from '../data/demoVisits'
 
+const visitsStore = useVisitsStore()
 const groups = ['Today', 'Upcoming', 'Completed']
 const selected = ref('Today')
 const days = computed(() => {
   const result = new Map()
-  for (const visit of visitsForGroup(demoVisits, selected.value, demoToday)) {
+  for (const visit of visitsForGroup(visitsStore.visits, selected.value, demoToday)) {
     const day = visit.start.slice(0, 10)
     if (!result.has(day)) result.set(day, [])
     result.get(day).push(visit)
@@ -36,7 +38,7 @@ const dateFormat = new Intl.DateTimeFormat('en-GB', { dateStyle: 'full', timeZon
         <span>{{ visits.length }} {{ visits.length === 1 ? 'visit' : 'visits' }}</span>
       </div>
       <ul>
-        <VisitListItem v-for="visit in visits" :key="visit.id" :visit="visit" />
+        <VisitListItem v-for="visit in visits" :key="visit.id" :visit="visit" :job="visitsStore.jobById(visit.jobId)" />
       </ul>
     </section>
     <section v-if="!days.length" class="empty">

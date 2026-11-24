@@ -1,18 +1,19 @@
 <script setup>
+import { useVisitsStore } from '../stores/visits'
 import { computed } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { demoVisits, getVisitRecordCounts, visitStatusLabels } from '../data/demoVisits'
+import { visitStatusLabels } from '../data/demoVisits'
 import { useVisitNotesStore } from '../stores/visitNotes'
 import { useVisitPhotosStore } from '../stores/visitPhotos'
 import { useVisitMaterialsStore } from '../stores/visitMaterials'
 
+const visitsStore = useVisitsStore()
 const route = useRoute()
 const visitNotesStore = useVisitNotesStore()
 const visitPhotosStore = useVisitPhotosStore()
 const visitMaterialsStore = useVisitMaterialsStore()
-const visit = computed(() =>
-  demoVisits.find((candidate) => String(candidate.id) === route.params.visitId),
-)
+const visit = computed(() => visitsStore.visitById(route.params.visitId))
+const job = computed(() => visitsStore.jobById(visit.value?.jobId))
 const scheduledDate = computed(() =>
   visit.value
     ? new Intl.DateTimeFormat('en-GB', {
@@ -27,7 +28,6 @@ const timeRange = computed(() =>
 const recordCounts = computed(() =>
   visit.value
     ? {
-        ...getVisitRecordCounts(visit.value.id),
         notes: visitNotesStore.notesForVisit(visit.value.id).length,
         photos: visitPhotosStore.photosForVisit(visit.value.id).length,
         materials: visitMaterialsStore.materialsForVisit(visit.value.id).length,
@@ -47,7 +47,7 @@ const actionLabel = computed(() => {
     <article v-if="visit" class="visit-detail">
       <header class="page-heading">
         <div class="title-stack">
-          <h1>{{ visit.job.title }}</h1>
+          <h1>{{ job.title }}</h1>
           <p class="status" :class="{ active: visit.status === 'IN_PROGRESS' }">
             {{ visitStatusLabels[visit.status] }}
           </p>
@@ -76,15 +76,15 @@ const actionLabel = computed(() => {
           <dl class="field-list">
             <div>
               <dt>Customer</dt>
-              <dd>{{ visit.job.customer }}</dd>
+              <dd>{{ job.customer }}</dd>
             </div>
             <div>
               <dt>Service address</dt>
-              <dd>{{ visit.job.site }}</dd>
+              <dd>{{ job.site }}</dd>
             </div>
             <div>
               <dt>Work description</dt>
-              <dd class="description">{{ visit.job.description }}</dd>
+              <dd class="description">{{ job.description }}</dd>
             </div>
           </dl>
         </section>

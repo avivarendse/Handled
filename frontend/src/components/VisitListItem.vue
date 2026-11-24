@@ -2,15 +2,15 @@
 import { RouterLink } from 'vue-router'
 import { visitStatusLabels } from '../data/demoVisits'
 
-defineProps({ visit: { type: Object, required: true } })
+defineProps({ job: { type: Object, required: true }, visit: { type: Object, required: true } })
 </script>
 
 <template>
   <li class="visit" :class="{ active: visit.status === 'IN_PROGRESS' }">
     <time :datetime="visit.start">{{ visit.start.slice(11) }}</time>
     <div class="work">
-      <h3>{{ visit.job.title }}</h3>
-      <p>{{ visit.job.customer }}</p>
+      <h3>{{ job.title }}</h3>
+      <p>{{ job.customer }}</p>
     </div>
     <span class="status">{{ visitStatusLabels[visit.status] }}</span>
     <RouterLink class="view-link" :to="{ name: 'visit-details', params: { visitId: visit.id } }">

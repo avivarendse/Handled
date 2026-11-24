@@ -1,19 +1,20 @@
 <script setup>
+import { useVisitsStore } from '../stores/visits'
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, RouterLink, useRoute } from 'vue-router'
-import { demoVisits, visitStatusLabels } from '../data/demoVisits'
+import { visitStatusLabels } from '../data/demoVisits'
 import { useVisitMaterialsStore } from '../stores/visitMaterials'
 import { validateMaterialDraft } from '../utils/visitMaterials'
 
+const visitsStore = useVisitsStore()
 const route = useRoute()
 const visitMaterialsStore = useVisitMaterialsStore()
 const draft = reactive({ name: '', quantity: '', unit: '' })
 const validationErrors = ref({})
 const confirmationMessage = ref('')
-const visit = computed(() =>
-  demoVisits.find((candidate) => String(candidate.id) === route.params.visitId),
-)
-const canAddMaterials = computed(() => visit.value?.status === 'IN_PROGRESS')
+const visit = computed(() => visitsStore.visitById(route.params.visitId))
+const job = computed(() => visitsStore.jobById(visit.value?.jobId))
+const canAddMaterials = computed(() => visitsStore.canAddRecords(route.params.visitId))
 const visitMaterials = computed(() =>
   visit.value ? visitMaterialsStore.materialsForVisit(visit.value.id) : [],
 )
@@ -100,8 +101,8 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', protectReload))
     <template v-if="visit">
       <header class="materials-header">
         <p class="eyebrow">Materials used</p>
-        <h1>{{ visit.job.title }}</h1>
-        <p class="customer">{{ visit.job.customer }}</p>
+        <h1>{{ job.title }}</h1>
+        <p class="customer">{{ job.customer }}</p>
         <p class="visit-status">{{ visitStatusLabels[visit.status] }}</p>
       </header>
 

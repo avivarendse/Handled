@@ -1,10 +1,12 @@
 <script setup>
+import { useVisitsStore } from '../stores/visits'
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { onBeforeRouteLeave, onBeforeRouteUpdate, RouterLink, useRoute } from 'vue-router'
-import { demoVisits, visitStatusLabels } from '../data/demoVisits'
+import { visitStatusLabels } from '../data/demoVisits'
 import { useVisitPhotosStore } from '../stores/visitPhotos'
 import { MAX_PENDING_PHOTOS, validatePhotoFile } from '../utils/visitPhotos'
 
+const visitsStore = useVisitsStore()
 const route = useRoute()
 const visitPhotosStore = useVisitPhotosStore()
 const fileInput = ref(null)
@@ -17,10 +19,9 @@ const previewTrigger = ref(null)
 const unavailablePhotoIds = ref(new Set())
 let nextPendingId = 1
 
-const visit = computed(() =>
-  demoVisits.find((candidate) => String(candidate.id) === route.params.visitId),
-)
-const canAddPhotos = computed(() => visit.value?.status === 'IN_PROGRESS')
+const visit = computed(() => visitsStore.visitById(route.params.visitId))
+const job = computed(() => visitsStore.jobById(visit.value?.jobId))
+const canAddPhotos = computed(() => visitsStore.canAddRecords(route.params.visitId))
 const visitPhotos = computed(() =>
   visit.value ? visitPhotosStore.photosForVisit(visit.value.id) : [],
 )
@@ -174,8 +175,8 @@ onBeforeUnmount(() => {
     <template v-if="visit">
       <header class="photos-header">
         <p class="eyebrow">Visit photos</p>
-        <h1>{{ visit.job.title }}</h1>
-        <p class="customer">{{ visit.job.customer }}</p>
+        <h1>{{ job.title }}</h1>
+        <p class="customer">{{ job.customer }}</p>
         <p class="visit-status">{{ visitStatusLabels[visit.status] }}</p>
       </header>
 

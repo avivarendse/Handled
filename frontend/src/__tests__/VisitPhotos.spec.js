@@ -1,9 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createPinia } from 'pinia'
 import { flushPromises, mount } from '@vue/test-utils'
+import { useVisitsStore } from '../stores/visits'
 import App from '../App.vue'
 import router from '../router'
-import { demoVisits } from '../data/demoVisits'
 import { useVisitPhotosStore } from '../stores/visitPhotos'
 import {
   MAX_PENDING_PHOTOS,
@@ -158,19 +158,14 @@ describe('visit photos', () => {
   it.each(['SCHEDULED', 'COMPLETED', 'CANCELLED'])(
     'does not expose photo-editing controls for %s visits',
     async (status) => {
-      const visit = demoVisits.find((candidate) => candidate.id === 101)
-      const originalStatus = visit.status
-      visit.status = status
-      try {
-        await router.push('/my-visits/101/photos')
-        const wrapper = mountPhotos()
-        expect(wrapper.find('input[type="file"]').exists()).toBe(false)
-        expect(wrapper.find('.primary-action').exists()).toBe(false)
-        expect(wrapper.find('.remove-photo').exists()).toBe(false)
-        expect(wrapper.text()).toContain('Existing photos remain available to view')
-      } finally {
-        visit.status = originalStatus
-      }
+      await router.push('/my-visits/101/photos')
+      const wrapper = mountPhotos()
+      useVisitsStore().visitById(101).status = status
+      await flushPromises()
+      expect(wrapper.find('input[type="file"]').exists()).toBe(false)
+      expect(wrapper.find('.primary-action').exists()).toBe(false)
+      expect(wrapper.find('.remove-photo').exists()).toBe(false)
+      expect(wrapper.text()).toContain('Existing photos remain available to view')
     },
   )
 

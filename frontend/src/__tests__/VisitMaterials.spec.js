@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createPinia } from 'pinia'
 import { flushPromises, mount } from '@vue/test-utils'
+import { useVisitsStore } from '../stores/visits'
 import App from '../App.vue'
 import router from '../router'
-import { demoVisits } from '../data/demoVisits'
 import { useVisitMaterialsStore } from '../stores/visitMaterials'
 import { validateMaterialDraft } from '../utils/visitMaterials'
 
@@ -173,21 +173,16 @@ describe('visit materials page', () => {
   it.each(['SCHEDULED', 'COMPLETED', 'CANCELLED'])(
     'does not provide entry controls for %s visits',
     async (status) => {
-      const visit = demoVisits.find((candidate) => candidate.id === 101)
-      const originalStatus = visit.status
-      visit.status = status
-      try {
-        await router.push('/my-visits/101/materials')
-        const { wrapper } = mountApp()
+      await router.push('/my-visits/101/materials')
+      const { wrapper } = mountApp()
+      useVisitsStore().visitById(101).status = status
+      await flushPromises()
 
-        expect(wrapper.find('.material-form').exists()).toBe(false)
-        expect(wrapper.find('.primary-action').exists()).toBe(false)
-        expect(wrapper.find('button').exists()).toBe(false)
-        expect(wrapper.text()).toContain('Existing records remain available to view')
-        expect(wrapper.text()).toContain('Pump gasket set')
-      } finally {
-        visit.status = originalStatus
-      }
+      expect(wrapper.find('.material-form').exists()).toBe(false)
+      expect(wrapper.find('.primary-action').exists()).toBe(false)
+      expect(wrapper.find('button').exists()).toBe(false)
+      expect(wrapper.text()).toContain('Existing records remain available to view')
+      expect(wrapper.text()).toContain('Pump gasket set')
     },
   )
 

@@ -1,3 +1,4 @@
+import { useVisitsStore } from './visits'
 import { onScopeDispose, ref } from 'vue'
 import { defineStore } from 'pinia'
 
@@ -33,6 +34,7 @@ const demoPhotos = [
 ]
 
 export const useVisitPhotosStore = defineStore('visit-photos', () => {
+  const visitsStore = useVisitsStore()
   const photos = ref(demoPhotos.map((photo) => ({ ...photo })))
   const ownedObjectUrls = new Set()
   let nextId = Math.max(...demoPhotos.map((photo) => photo.id)) + 1
@@ -42,6 +44,7 @@ export const useVisitPhotosStore = defineStore('visit-photos', () => {
   }
 
   function addPhotos(visitId, pendingPhotos) {
+    if (!visitsStore.canAddRecords(visitId)) return null
     const addedPhotos = pendingPhotos.map((photo) => {
       ownedObjectUrls.add(photo.url)
       return {

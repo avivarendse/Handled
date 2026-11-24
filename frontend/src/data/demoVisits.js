@@ -7,44 +7,56 @@ export const visitStatusLabels = {
   CANCELLED: 'Cancelled',
 }
 
-const pumpJob = {
-  title: 'Booster pump service',
-  customer: 'Cedar House',
-  site: '18 Oak Avenue, Rosebank',
-  description:
-    'Inspect pump operation, check seals and pressure settings, and record any maintenance required.',
-}
-
-export const demoVisits = [
-  {
-    id: 103,
-    job: {
+export function createDemoJobs() {
+  return [
+    {
+      id: 1,
+      status: 'IN_PROGRESS',
+      title: 'Booster pump service',
+      customer: 'Cedar House',
+      site: '18 Oak Avenue, Rosebank',
+      description:
+        'Inspect pump operation, check seals and pressure settings, and record any maintenance required.',
+    },
+    {
+      id: 2,
+      status: 'SCHEDULED',
       title: 'Distribution board inspection',
       customer: 'Parkview Dental',
       site: '42 Tyrone Avenue, Parkview',
       description:
         'Inspect the distribution board, test protective devices, and document any faults found.',
     },
-    start: '2026-11-23T13:30',
-    end: '14:30',
-    status: 'SCHEDULED',
-  },
-  { id: 101, job: pumpJob, start: '2026-11-23T08:30', end: '10:00', status: 'IN_PROGRESS' },
-  { id: 104, job: pumpJob, start: '2026-11-25T09:00', end: '09:45', status: 'SCHEDULED' },
-  {
-    id: 102,
-    job: {
+    {
+      id: 3,
+      status: 'SCHEDULED',
       title: 'Air conditioner maintenance',
       customer: 'Mokoena Family',
       site: '7 Pine Road, Linden',
       description:
         'Service the air-conditioning unit, clean filters, and verify cooling performance.',
     },
-    start: '2026-11-23T11:00',
-    end: '12:00',
-    status: 'SCHEDULED',
-  },
-]
+  ]
+}
+
+export function createDemoVisits() {
+  return [
+    { id: 103, jobId: 2, start: '2026-11-23T13:30', end: '14:30', status: 'SCHEDULED' },
+    { id: 101, jobId: 1, start: '2026-11-23T08:30', end: '10:00', status: 'IN_PROGRESS' },
+    {
+      id: 104,
+      jobId: 1,
+      start: '2026-11-20T11:30',
+      end: '12:15',
+      status: 'COMPLETED',
+      completionSummary:
+        'Checked the pump controller. Return to inspect seals and pressure settings.',
+      completedAt: '2026-11-20T10:15:00.000Z',
+      completionOutcome: 'FOLLOW_UP_REQUIRED',
+    },
+    { id: 102, jobId: 3, start: '2026-11-23T11:00', end: '12:00', status: 'SCHEDULED' },
+  ]
+}
 
 export const demoVisitRecords = [
   {

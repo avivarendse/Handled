@@ -1,8 +1,10 @@
+import { useVisitsStore } from './visits'
 import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import { demoVisitRecords } from '../data/demoVisits'
 
 export const useVisitNotesStore = defineStore('visit-notes', () => {
+  const visitsStore = useVisitsStore()
   const notes = ref(
     demoVisitRecords
       .filter((record) => record.category === 'notes')
@@ -17,6 +19,7 @@ export const useVisitNotesStore = defineStore('visit-notes', () => {
   }
 
   function addNote(visitId, text) {
+    if (!visitsStore.canAddRecords(visitId)) return null
     const note = {
       id: nextId++,
       visitId: Number(visitId),
