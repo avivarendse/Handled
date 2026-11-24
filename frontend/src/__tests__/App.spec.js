@@ -126,10 +126,8 @@ describe('My visits', () => {
     expect(wrapper.findAll('.record-link').map((link) => link.attributes('href'))).toEqual([
       '/my-visits/101/notes',
       '/my-visits/101/photos',
+      '/my-visits/101/materials',
     ])
-    expect(wrapper.find('.record-row:last-child a, .record-row:last-child button').exists()).toBe(
-      false,
-    )
     expect(getVisitRecordCounts(101)).toEqual({ notes: 2, photos: 1, materials: 1 })
     expect(getVisitRecordCounts(104)).toEqual({ notes: 1, photos: 2, materials: 0 })
     expect(demoVisitRecords.every((record) => demoVisits.some((item) => item.id === record.visitId)))
@@ -203,6 +201,11 @@ describe('My visits', () => {
         await router.push('/my-visits/101/notes')
         await flushPromises()
         expect(wrapper.find('textarea').exists()).toBe(false)
+        expect(wrapper.find('button').exists()).toBe(false)
+
+        await router.push('/my-visits/101/materials')
+        await flushPromises()
+        expect(wrapper.find('.material-form').exists()).toBe(false)
         expect(wrapper.find('button').exists()).toBe(false)
       } finally {
         if (wrapper) wrapper.unmount()

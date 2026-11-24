@@ -4,10 +4,12 @@ import { useRoute, RouterLink } from 'vue-router'
 import { demoVisits, getVisitRecordCounts, visitStatusLabels } from '../data/demoVisits'
 import { useVisitNotesStore } from '../stores/visitNotes'
 import { useVisitPhotosStore } from '../stores/visitPhotos'
+import { useVisitMaterialsStore } from '../stores/visitMaterials'
 
 const route = useRoute()
 const visitNotesStore = useVisitNotesStore()
 const visitPhotosStore = useVisitPhotosStore()
+const visitMaterialsStore = useVisitMaterialsStore()
 const visit = computed(() =>
   demoVisits.find((candidate) => String(candidate.id) === route.params.visitId),
 )
@@ -28,6 +30,7 @@ const recordCounts = computed(() =>
         ...getVisitRecordCounts(visit.value.id),
         notes: visitNotesStore.notesForVisit(visit.value.id).length,
         photos: visitPhotosStore.photosForVisit(visit.value.id).length,
+        materials: visitMaterialsStore.materialsForVisit(visit.value.id).length,
       }
     : { notes: 0, photos: 0, materials: 0 },
 )
@@ -94,7 +97,7 @@ const actionLabel = computed(() => {
       >
         <div class="records-heading">
           <h2 id="records-heading">Visit records</h2>
-          <p>Notes and photos are temporary; materials are not implemented.</p>
+          <p>Notes, photos and materials are temporary demonstration records.</p>
         </div>
         <ul class="record-list">
           <li class="record-row">
@@ -120,8 +123,15 @@ const actionLabel = computed(() => {
             </RouterLink>
           </li>
           <li class="record-row">
-            <span>Materials</span>
-            <span class="record-count">{{ recordCounts.materials }}</span>
+            <RouterLink
+              class="record-link"
+              :to="{ name: 'visit-materials', params: { visitId: visit.id } }"
+            >
+              <span>Materials</span>
+              <span class="record-meta">
+                <span class="record-count">{{ recordCounts.materials }}</span>
+              </span>
+            </RouterLink>
           </li>
         </ul>
       </section>

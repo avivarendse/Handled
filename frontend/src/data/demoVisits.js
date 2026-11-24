@@ -62,7 +62,15 @@ export const demoVisitRecords = [
     createdAt: '2026-11-23T09:15:00.000Z',
   },
   { id: 3, visitId: 101, category: 'photos' },
-  { id: 4, visitId: 101, category: 'materials' },
+  {
+    id: 4,
+    visitId: 101,
+    category: 'materials',
+    name: 'Pump gasket set',
+    quantity: '1',
+    unit: 'set',
+    createdAt: '2026-11-23T09:20:00.000Z',
+  },
   {
     id: 5,
     visitId: 102,
@@ -70,7 +78,15 @@ export const demoVisitRecords = [
     text: 'Customer requested the filter replacement be noted for follow-up.',
     createdAt: '2026-11-23T11:30:00.000Z',
   },
-  { id: 6, visitId: 102, category: 'materials' },
+  {
+    id: 6,
+    visitId: 102,
+    category: 'materials',
+    name: 'Washable air filters',
+    quantity: '2',
+    unit: 'each',
+    createdAt: '2026-11-23T11:40:00.000Z',
+  },
   { id: 7, visitId: 103, category: 'photos' },
   {
     id: 8,
