@@ -142,7 +142,7 @@ async function submitCompletion() {
   completionFormOpen.value = false
   resetCompletionDraft()
   startSuccessMessage.value = ''
-  completionSuccessMessage.value = 'Visit completed. Saved visit records are now read-only.'
+  completionSuccessMessage.value = 'Visit completed successfully.'
   nextTick(() => completionResultHeading.value?.focus())
 }
 
@@ -193,7 +193,16 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', protectReload))
 <template>
   <main class="page-container details-page">
     <RouterLink class="back-link" :to="{ name: 'my-visits' }">Back to my visits</RouterLink>
-    <article v-if="visit" class="visit-detail" :class="{ 'completion-open': completionFormOpen }">
+    <article
+      v-if="visit"
+      class="visit-detail"
+      :class="{
+        'completion-open': completionFormOpen,
+        'completed-visit': visit.status === 'COMPLETED',
+        'in-progress-visit': visit.status === 'IN_PROGRESS',
+        'scheduled-visit': visit.status === 'SCHEDULED',
+      }"
+    >
       <header class="page-heading">
         <div class="title-stack">
           <h1>{{ job.title }}</h1>
@@ -272,13 +281,60 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', protectReload))
       </section>
 
       <section
+        v-if="showVisitRecords"
+        class="records-section"
+        aria-labelledby="records-heading"
+      >
+        <div class="records-heading">
+          <h2 id="records-heading">Visit records</h2>
+          <p v-if="visit.status === 'COMPLETED'">Saved visit records are read-only.</p>
+          <p v-else>Record work carried out during this visit.</p>
+        </div>
+        <ul class="record-list">
+          <li class="record-row">
+            <RouterLink
+              class="record-link"
+              :to="{ name: 'visit-notes', params: { visitId: visit.id } }"
+            >
+              <span>Notes</span>
+              <span class="record-meta">
+                <span class="record-count">{{ recordCounts.notes }}</span>
+              </span>
+            </RouterLink>
+          </li>
+          <li class="record-row">
+            <RouterLink
+              class="record-link"
+              :to="{ name: 'visit-photos', params: { visitId: visit.id } }"
+            >
+              <span>Photos</span>
+              <span class="record-meta">
+                <span class="record-count">{{ recordCounts.photos }}</span>
+              </span>
+            </RouterLink>
+          </li>
+          <li class="record-row">
+            <RouterLink
+              class="record-link"
+              :to="{ name: 'visit-materials', params: { visitId: visit.id } }"
+            >
+              <span>Materials</span>
+              <span class="record-meta">
+                <span class="record-count">{{ recordCounts.materials }}</span>
+              </span>
+            </RouterLink>
+          </li>
+        </ul>
+      </section>
+
+      <section
         v-if="completionFormOpen"
         class="completion-form-section"
         aria-labelledby="completion-form-heading"
       >
         <div class="section-heading">
           <h2 id="completion-form-heading">Complete visit</h2>
-          <p>Saving will complete this visit and apply the selected job outcome.</p>
+          <p>Summarise your work and choose whether another visit is needed.</p>
         </div>
         <form class="completion-form" novalidate @submit.prevent="submitCompletion">
           <div class="completion-field">
@@ -288,7 +344,7 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', protectReload))
               ref="completionSummaryInput"
               v-model="completionDraft.summary"
               rows="5"
-              placeholder="Summarise the work completed and any findings."
+              placeholder="e.g. Replaced worn seals and tested the system."
               :aria-invalid="Boolean(completionErrors.summary)"
               :aria-describedby="
                 completionErrors.summary ? 'completion-summary-error' : 'completion-summary-hint'
@@ -358,14 +414,13 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', protectReload))
 
           <p v-if="completionDraft.outcome" class="outcome-consequence" aria-live="polite">
             <template v-if="completionDraft.outcome === 'JOB_COMPLETE'">
-              If submitted, this visit and the overall job will be completed.
+              Completing this visit will also complete the job. You can still view saved records,
+              but you cannot make changes.
             </template>
             <template v-else>
-              If submitted, this visit will be completed and the job will require another
-              appointment.
+              This visit will be completed. A manager will need to arrange another visit. You can
+              still view saved records, but you cannot make changes.
             </template>
-            Saved visit records become read-only after completion. Selecting an outcome alone does
-            not change any state.
           </p>
 
           <p v-if="actionError" class="field-error submission-error" role="alert">
@@ -378,53 +433,6 @@ onBeforeUnmount(() => window.removeEventListener('beforeunload', protectReload))
             </button>
           </div>
         </form>
-      </section>
-
-      <section
-        v-if="showVisitRecords"
-        class="records-section"
-        aria-labelledby="records-heading"
-      >
-        <div class="records-heading">
-          <h2 id="records-heading">Visit records</h2>
-          <p v-if="visit.status === 'COMPLETED'">Saved visit records are read-only.</p>
-          <p v-else>Notes, photos and materials are temporary demonstration records.</p>
-        </div>
-        <ul class="record-list">
-          <li class="record-row">
-            <RouterLink
-              class="record-link"
-              :to="{ name: 'visit-notes', params: { visitId: visit.id } }"
-            >
-              <span>Notes</span>
-              <span class="record-meta">
-                <span class="record-count">{{ recordCounts.notes }}</span>
-              </span>
-            </RouterLink>
-          </li>
-          <li class="record-row">
-            <RouterLink
-              class="record-link"
-              :to="{ name: 'visit-photos', params: { visitId: visit.id } }"
-            >
-              <span>Photos</span>
-              <span class="record-meta">
-                <span class="record-count">{{ recordCounts.photos }}</span>
-              </span>
-            </RouterLink>
-          </li>
-          <li class="record-row">
-            <RouterLink
-              class="record-link"
-              :to="{ name: 'visit-materials', params: { visitId: visit.id } }"
-            >
-              <span>Materials</span>
-              <span class="record-meta">
-                <span class="record-count">{{ recordCounts.materials }}</span>
-              </span>
-            </RouterLink>
-          </li>
-        </ul>
       </section>
 
       <div v-if="actionLabel" class="action-section">
@@ -551,6 +559,11 @@ dd {
   margin-top: 18px;
   padding-top: 18px;
   border-top: 1px solid #d9ddda;
+}
+.completion-details {
+  padding-bottom: 18px;
+  border-top: 0;
+  border-bottom: 1px solid #d9ddda;
 }
 .completion-form-section h2,
 .completion-details h2 {
@@ -684,11 +697,8 @@ dd {
   padding-top: 16px;
 }
 .records-heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px 16px;
+  display: grid;
+  gap: 6px;
 }
 .records-heading h2 {
   margin-bottom: 0;
@@ -790,11 +800,26 @@ dd {
   grid-template-areas:
     'heading'
     'details'
-    'action'
     'completion'
-    'records';
+    'records'
+    'action';
 }
-.visit-detail.completion-open {
+.visit-detail.scheduled-visit,
+.visit-detail.in-progress-visit {
+  grid-template-areas:
+    'heading'
+    'details'
+    'records'
+    'action';
+}
+.visit-detail.in-progress-visit.completion-open {
+  grid-template-areas:
+    'heading'
+    'details'
+    'records'
+    'completion';
+}
+.visit-detail.completed-visit {
   grid-template-areas:
     'heading'
     'details'
@@ -817,13 +842,34 @@ dd {
       'records records';
     column-gap: 32px;
   }
-  .visit-detail.completion-open {
+  .visit-detail.in-progress-visit {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'heading action'
+      'details details'
+      'records records';
+  }
+  .visit-detail.in-progress-visit.completion-open {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'heading'
+      'details'
+      'records'
+      'completion';
+  }
+  .visit-detail.completed-visit {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'heading'
       'details'
       'completion'
       'records';
+  }
+  .visit-detail.scheduled-visit {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'heading action'
+      'details details';
   }
   .action-section {
     align-self: center;

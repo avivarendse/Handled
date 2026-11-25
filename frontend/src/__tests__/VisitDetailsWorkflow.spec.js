@@ -73,9 +73,27 @@ describe('Visit Details lifecycle actions', () => {
 
     expect(wrapper.findAll('button.primary-action')).toHaveLength(1)
     expect(wrapper.get('textarea#completion-summary').exists()).toBe(true)
+    expect(wrapper.get('#completion-summary').attributes('placeholder')).toBe(
+      'e.g. Replaced worn seals and tested the system.',
+    )
+    expect(wrapper.text()).toContain(
+      'Summarise your work and choose whether another visit is needed.',
+    )
+    expect(wrapper.text()).toContain(
+      'Describe the work completed or what further work is needed.',
+    )
     expect(wrapper.findAll('input[type="radio"]:checked')).toHaveLength(0)
     expect(document.activeElement).toBe(wrapper.get('#completion-summary').element)
     expect(store.visitById(101).status).toBe('IN_PROGRESS')
+
+    const sectionNames = wrapper
+      .findAll('.details-grid, .records-section, .completion-form-section')
+      .map((section) => section.classes()[0])
+    expect(sectionNames).toEqual([
+      'details-grid',
+      'records-section',
+      'completion-form-section',
+    ])
   })
 
   it('validates summary and outcome independently while preserving the draft', async () => {
@@ -117,8 +135,8 @@ describe('Visit Details lifecycle actions', () => {
     await wrapper.get(`input[value="${outcome}"]`).setValue()
     expect(wrapper.get('.outcome-consequence').text()).toContain(
       outcome === 'JOB_COMPLETE'
-        ? 'visit and the overall job will be completed'
-        : 'job will require another appointment',
+        ? 'Completing this visit will also complete the job.'
+        : 'A manager will need to arrange another visit.',
     )
     expect(store.visitById(101).status).toBe('IN_PROGRESS')
 
@@ -150,7 +168,7 @@ describe('Visit Details lifecycle actions', () => {
         timeZone: 'Africa/Johannesburg',
       }).format(new Date('2026-11-24T12:15:00.000Z')),
     )
-    expect(wrapper.get('[role="status"]').text()).toContain('read-only')
+    expect(wrapper.get('[role="status"]').text()).toBe('Visit completed successfully.')
     expect(wrapper.findAll('.record-link')).toHaveLength(3)
     expect(router.currentRoute.value.path).toBe('/my-visits/101')
 
@@ -241,5 +259,6 @@ describe('Visit Details lifecycle actions', () => {
     expect(wrapper.find('.completion-form').exists()).toBe(false)
     expect(wrapper.findAll('.record-link')).toHaveLength(3)
     expect(wrapper.text()).toContain('Saved visit records are read-only.')
+    expect(wrapper.find('[role="status"]').exists()).toBe(false)
   })
 })

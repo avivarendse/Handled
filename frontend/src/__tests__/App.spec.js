@@ -139,6 +139,9 @@ describe('My visits', () => {
     await flushPromises()
 
     expect(wrapper.get('.records-section h2').text()).toBe('Visit records')
+    expect(wrapper.get('.records-heading p').text()).toBe(
+      'Record work carried out during this visit.',
+    )
     expect(
       wrapper.findAll('.record-row').map((row) => [
         row.find('span').text(),
